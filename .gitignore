@@ -1,0 +1,57 @@
+# ===== 환경 변수 · 시크릿 =====
+.env
+.env.*
+*.key
+*.pem
+application-local.yml
+application-secret.yml
+
+# ===== Eclipse / STS 워크스페이스 =====
+.metadata/
+.recommenders/
+RemoteSystemsTempFiles/
+.apt_generated/
+.factorypath
+.springBeans
+.sts4-cache/
+.settings/
+.project
+.classpath
+bin/
+
+# ===== IntelliJ =====
+.idea/
+*.iml
+*.iws
+out/
+
+# ===== VS Code =====
+.vscode/
+
+# ===== Java / Spring =====
+target/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+*.class
+*.jar
+*.war
+.gradle/
+
+# ===== Node / React =====
+node_modules/
+dist/
+.next/
+coverage/
+npm-debug.log*
+yarn-error.log*
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 로그 · 임시 =====
+*.log
+logs/
+tmp/

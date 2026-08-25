@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: midpoint  
+  profiles:
+    include:
+    - DB
+
+server:
+  port: 8080
+
+mybatis:
+  configuration:
+    jdbc-type-for-null: VARCHAR
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.kh.midpoint.gameparticipant.model.vo, com.kh.midpoint.gameresult.model.vo, com.kh.midpoint.participant.model.vo, com.kh.midpoint.restaurant.model.vo, com.kh.midpoint.room.model.vo
