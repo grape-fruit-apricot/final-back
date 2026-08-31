@@ -37,7 +37,8 @@
         SELECT M.MESSAGE_ID, M.PARTICIPANT_ID, P.NICKNAME,
                M.CONTENT, M.MSG_TYPE, M.CREATED_AT
           FROM CHAT_MESSAGE M
-          JOIN PARTICIPANT P ON M.PARTICIPANT_ID = P.PARTICIPANT_ID
+          JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
+                       AND P.ROOM_ID       = M.ROOM_ID   -- 복합 PK 라 두 컬럼 모두 필요
          WHERE M.MESSAGE_ID = #{messageId}
     </select>
 
@@ -47,7 +48,8 @@
             SELECT M.MESSAGE_ID, M.PARTICIPANT_ID, P.NICKNAME,
                    M.CONTENT, M.MSG_TYPE, M.CREATED_AT
               FROM CHAT_MESSAGE M
-              JOIN PARTICIPANT P ON M.PARTICIPANT_ID = P.PARTICIPANT_ID
+              JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
+                       AND P.ROOM_ID       = M.ROOM_ID   -- 복합 PK 라 두 컬럼 모두 필요
              WHERE M.ROOM_ID = #{roomId}
              ORDER BY M.MESSAGE_ID DESC
              FETCH FIRST 100 ROWS ONLY
