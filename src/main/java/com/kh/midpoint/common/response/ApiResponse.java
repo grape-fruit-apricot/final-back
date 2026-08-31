@@ -1,21 +1,34 @@
 package com.kh.midpoint.common.response;
 
-// 모든 API 응답을 이 모양으로 감싼다: 성공 여부 + 메시지 + 실제 데이터.
-public record ApiResponse<T>(boolean success, String message, T data) {
+import lombok.Getter;
 
-	public static <T> ApiResponse<T> ok(T data) {
-		return new ApiResponse<>(true, null, data);
+@Getter
+public class ApiResponse<T> {
+
+	private final int code;
+	private final String message;
+	private final T data;
+
+	private ApiResponse(int code, String message, T data) {
+		this.code = code;
+		this.message = message;
+		this.data = data;
+	}
+
+	public static <T> ApiResponse<T> ok(String message, T data) {
+		return new ApiResponse<>(200, message, data);
 	}
 
 	public static <T> ApiResponse<T> created(String message, T data) {
-		return new ApiResponse<>(true, message, data);
+		return new ApiResponse<>(201, message, data);
 	}
 
-	public static ApiResponse<Void> updated() {
-		return new ApiResponse<>(true, null, null);
+	public static <T> ApiResponse<T> noContent(String message) {
+		return new ApiResponse<>(204, message, null);
 	}
 
-	public static ApiResponse<Void> fail(String message) {
-		return new ApiResponse<>(false, message, null);
+	public static <T> ApiResponse<T> error(int code, String message) {
+		return new ApiResponse<>(code, message, null);
 	}
+
 }
