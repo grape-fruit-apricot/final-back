@@ -39,6 +39,7 @@ build/
 !**/src/test/**/build/
 *.class
 *.jar
+*.yml
 *.war
 .gradle/
 
@@ -59,3 +60,7 @@ desktop.ini
 *.log
 logs/
 tmp/
+
+# ===== CLAUDE =====
+CLAUDE.md
+TASK.md
