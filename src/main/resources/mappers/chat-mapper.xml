@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.chat.model.dao.ChatMapper">
+
+    <!-- 대외용 UUID -> 내부 PK. 없으면 null -->
+    <!-- TODO: 방 만료(EXPIRES_AT) 처리 정책 정해지면 조건 추가 -->
+    <select id="selectRoomIdByUuid" resultType="java.lang.Long">
+        SELECT ROOM_ID
+          FROM ROOM
+         WHERE ROOM_UUID = #{roomUuid}
+    </select>
+
+    <!--
+        CONNECT 시점 검증 겸 닉네임 조회.
+        해당 방의 참가자가 아니면 null 이 나오므로 참가자 검증 역할도 한다.
+    -->
+    <select id="selectNicknameByParticipant" resultType="java.lang.String">
+        SELECT NICKNAME
+          FROM PARTICIPANT
+         WHERE ROOM_ID = #{roomId}
+           AND PARTICIPANT_ID = #{participantId}
+    </select>
+
+    <insert id="insertMessage" parameterType="ChatMessage">
+        <selectKey keyProperty="messageId" resultType="java.lang.Long" order="BEFORE">
+            SELECT SEQ_CHAT_MESSAGE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO CHAT_MESSAGE
+            (MESSAGE_ID, ROOM_ID, PARTICIPANT_ID, CONTENT, MSG_TYPE, CREATED_AT)
+        VALUES
+            (#{messageId}, #{roomId}, #{participantId}, #{content}, #{msgType}, SYSTIMESTAMP)
+    </insert>
+
+    <!-- 방금 저장한 메시지를 닉네임까지 붙여서 다시 조회 -->
+    <select id="selectMessageById" resultType="ChatMessageResponse">
+        SELECT M.MESSAGE_ID, M.PARTICIPANT_ID, P.NICKNAME,
+               M.CONTENT, M.MSG_TYPE, M.CREATED_AT
+          FROM CHAT_MESSAGE M
+          JOIN PARTICIPANT P ON M.PARTICIPANT_ID = P.PARTICIPANT_ID
+         WHERE M.MESSAGE_ID = #{messageId}
+    </select>
+
+    <!-- 최근 100건만 가져온 뒤 오래된 순으로 되돌린다 -->
+    <select id="selectMessagesByRoomId" resultType="ChatMessageResponse">
+        SELECT * FROM (
+            SELECT M.MESSAGE_ID, M.PARTICIPANT_ID, P.NICKNAME,
+                   M.CONTENT, M.MSG_TYPE, M.CREATED_AT
+              FROM CHAT_MESSAGE M
+              JOIN PARTICIPANT P ON M.PARTICIPANT_ID = P.PARTICIPANT_ID
+             WHERE M.ROOM_ID = #{roomId}
+             ORDER BY M.MESSAGE_ID DESC
+             FETCH FIRST 100 ROWS ONLY
+        ) ORDER BY MESSAGE_ID
+    </select>
+
+</mapper>
