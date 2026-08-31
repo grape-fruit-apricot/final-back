@@ -64,3 +64,6 @@ tmp/
 # ===== CLAUDE =====
 CLAUDE.md
 TASK.md
+
+# ===== 로컬 테스트용 (커밋하지 않음) =====
+src/main/resources/static/chat-test.html
