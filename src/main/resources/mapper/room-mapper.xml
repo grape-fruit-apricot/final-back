@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.room.model.dao.RoomMapper">
+
+	<insert id="insertRoom" parameterType="Room">
+		INSERT INTO ROOM (
+			room_id,
+			room_uuid
+			<if test="maxParticipants != null">, max_participants</if>
+		) VALUES (
+			SEQ_ROOM.NEXTVAL,
+			#{roomUuid}
+			<if test="maxParticipants != null">, #{maxParticipants}</if>
+		)
+	</insert>
+
+	<select id="findRoom" resultType="RoomCreateResponseDto">
+		SELECT
+			room_uuid,
+			max_participants,
+			midpoint_lat,
+			midpoint_lng,
+			midpoint_source,
+			stage,
+			created_at,
+			expires_at
+		FROM ROOM
+		WHERE room_uuid = #{roomUuid}
+	</select>
+
+</mapper>
