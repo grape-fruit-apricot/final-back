@@ -32,7 +32,7 @@ public class ParticipantController {
 
 	@DeleteMapping("/{participantId}")
 	public ResponseEntity<Void> leave(@PathVariable("roomUuid") String roomUuid, @PathVariable("participantId") Long participantId) {
-		participantService.deleteParticipant(participantId);
+		participantService.deleteParticipant(roomUuid, participantId);
 		return ResponseEntity.noContent().build();
 	}
 

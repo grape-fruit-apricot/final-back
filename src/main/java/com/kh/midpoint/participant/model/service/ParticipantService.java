@@ -40,9 +40,11 @@ public class ParticipantService {
 	}
 
 	@Transactional
-	public void deleteParticipant(Long participantId) {
+	public void deleteParticipant(String roomUuid, Long participantId) {
+		RoomResponseDto room = roomService.findRoom(roomUuid);
+
 		ParticipantResponseDto participant = participantMapper.findParticipant(participantId);
-		if (participant == null) {
+		if (participant == null || !participant.getRoomId().equals(room.getRoomId())) {
 			throw new NotFoundException("존재하지 않는 참가자입니다: " + participantId);
 		}
 
