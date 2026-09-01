@@ -77,7 +77,7 @@ public class GameDto {
     /** DB 정보와 메모리 런타임 상태를 합쳐 클라이언트에 전달하는 게임 전체 응답이다. */
     @Value
     public static class GameResponse {
-        private Long gameId;
+        private Long roomId;
         private Long playerId;
         private Long hostId;
         private boolean host;

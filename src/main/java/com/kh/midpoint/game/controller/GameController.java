@@ -18,12 +18,12 @@ import lombok.RequiredArgsConstructor;
 public class GameController {
 	private final GameService gameService;
 	
-	@PostMapping("/{gameId}/join")
+	@PostMapping("/{roomId}/join")
     public ResponseEntity<ApiResponse<GameResponse>> insertPlayer(
-            @PathVariable("gameId") Long gameId, @Valid @RequestBody JoinRequest request) {
+            @PathVariable("roomId") Long roomId, @Valid @RequestBody JoinRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("게임 참가에 성공했습니다.",
-                        gameService.insertPlayer(gameId, request.getPlayerName())));
+                        gameService.insertPlayer(roomId, request.getPlayerName())));
     }
 	
 }

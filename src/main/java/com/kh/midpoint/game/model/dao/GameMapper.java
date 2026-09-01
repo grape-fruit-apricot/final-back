@@ -18,25 +18,25 @@ public interface GameMapper {
     //게임 방에 새로운 참가자를 등록하는 메서드
     int insertPlayer(GamePlayer player);
     //게임 ID로 방 정보를 조회하는 메서드
-    Game findGame(Long gameId);
+    Game findGame(@Param("roomId") Long roomId);
     //동시 참가 처리를 위해 게임 방을 잠금 조회하는 메서드
-    Game findGameForUpdate(Long gameId);
+    Game findGameForUpdate(@Param("roomId") Long roomId);
     //게임에 남아 있는 활성 참가자 목록을 조회하는 메서드
-    List<GamePlayer> findPlayerList(Long gameId);
+    List<GamePlayer> findPlayerList(@Param("roomId") Long roomId);
     //게임에서 동일한 닉네임이 사용된 횟수를 조회하는 메서드
-    boolean existsPlayerName(@Param("gameId") Long gameId, @Param("playerName") String playerName);
+    boolean existsPlayerName(@Param("roomId") Long roomId, @Param("playerName") String playerName);
     //다음 참가자의 입장 순서를 계산하는 메서드
-    int findNextPlayerOrder(Long gameId);
+    int findNextPlayerOrder(@Param("roomId") Long roomId);
     //참가자의 퇴장 시각을 기록해 비활성 상태로 변경하는 메서드
-    int deletePlayer(@Param("gameId") Long gameId, @Param("playerId") String playerId);
+    int deletePlayer(@Param("roomId") Long roomId, @Param("playerId") String playerId);
     //게임에 속한 모든 참가자 데이터를 삭제하는 메서드
-    int deletePlayerList(Long gameId);
+    int deletePlayerList(@Param("roomId") Long roomId);
     //현재 남아 있는 참가자 중 다음 방장 ID를 조회하는 메서드
-    String findNextHostId(Long gameId);
+    String findNextHostId(@Param("roomId") Long roomId);
     //지정한 참가자에게 방장 권한을 변경하는 메서드
-    int updateHost(@Param("gameId") Long gameId, @Param("hostPlayerId") String hostPlayerId);
+    int updateHost(@Param("roomId") Long roomId, @Param("hostPlayerId") String hostPlayerId);
     //게임 방 데이터를 삭제하는 메서드
-    int deleteGame(Long gameId);
+    int deleteGame(@Param("roomId") Long roomId);
 
   
 }

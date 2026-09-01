@@ -11,7 +11,7 @@ import lombok.Setter;
 public class GamePlayer {
 	private Long participantId;
     private String playerId;
-    private Long gameId;
+    private Long roomId;
     private String playerName;
     private int playerOrder;
     private String playerStatus;

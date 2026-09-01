@@ -27,29 +27,29 @@ public class GameService {
 	private final GameMapper gameMapper;
 	
 	@Transactional
-    public GameResponse insertPlayer(Long gameId, String playerName) {
+    public GameResponse insertPlayer(Long roomId, String playerName) {
         // 동시 입장 시 정원과 입장 순서가 꼬이지 않도록 방 행을 잠가 조회한다.
-        Game game = gameMapper.findGameForUpdate(gameId);
+        Game game = gameMapper.findGameForUpdate(roomId);
         // 방이 존재하고 아직 게임을 시작하지 않았을 때만 입장을 허용한다.
         if (game == null) throw new NotFoundException("존재하지 않는 방입니다.");
-        if (runtimeStore.gameStarted(gameId)) throw new InvalidStateException("이미 게임이 시작되었습니다.");
+        if (runtimeStore.gameStarted(roomId)) throw new InvalidStateException("이미 게임이 시작되었습니다.");
         // 활성 참가자 수를 기준으로 최대 정원 초과 여부를 검사한다.
-        game.setPlayers(gameMapper.findPlayerList(gameId));
+        game.setPlayers(gameMapper.findPlayerList(roomId));
         if (game.getPlayers().stream().filter(this::isActive).count() >= MAX_PLAYERS)
             throw new InvalidStateException("방 정원이 가득 찼습니다.");
         // 이름의 공백과 길이를 정리한 뒤 같은 방의 닉네임 중복을 검사한다.
         String name = cleanName(playerName);
-        if (gameMapper.existsPlayerName(gameId, name))
+        if (gameMapper.existsPlayerName(roomId, name))
             throw new DuplicateException("이 게임에서 이미 사용된 이름입니다. 다른 이름을 입력해 주세요.");
-        int order = gameMapper.findNextPlayerOrder(gameId);
+        int order = gameMapper.findNextPlayerOrder(roomId);
         if (order > MAX_PLAYERS) throw new InvalidStateException("이 방은 더 이상 참가자를 추가할 수 없습니다.");
         // 참가자를 저장하고 DB가 생성한 PARTICIPANT_ID를 playerId로 사용한다.
-        GamePlayer player = newPlayer(gameId, name, order);
+        GamePlayer player = newPlayer(roomId, name, order);
         gameMapper.insertPlayer(player);
         player.setPlayerId(player.getParticipantId().toString());
         // 최신 참가자 목록을 실시간 상태에 반영하고 새 참가자 관점의 방 상태를 반환한다.
-        Game updated = findRequiredGame(gameId);
-        runtimeStore.participantsChanged(gameId, activeIds(updated));
+        Game updated = findRequiredGame(roomId);
+        runtimeStore.participantsChanged(roomId, activeIds(updated));
         return response(updated, player.getParticipantId());
     }
 
@@ -59,9 +59,9 @@ public class GameService {
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
-	private GamePlayer newPlayer(Long gameId, String playerName, int order) {
+	private GamePlayer newPlayer(Long roomId, String playerName, int order) {
 		GamePlayer player = new GamePlayer();
-        player.setGameId(gameId);
+        player.setRoomId(roomId);
         player.setPlayerName(playerName);
         player.setPlayerOrder(order);
         player.setPlayerStatus("ACTIVE");
@@ -70,20 +70,20 @@ public class GameService {
 
 	//DB 정보와 서버 메모리 상태를 프론트 응답 객체로 변환하는 메서드
     private GameResponse response(Game game, Long playerId) {
-        Long gameId = game.getGameId();
-        GameRuntimeStore.RuntimeState runtime = runtimeStore.get(gameId);
+        Long roomId = game.getRoomId();
+        GameRuntimeStore.RuntimeState runtime = runtimeStore.get(roomId);
         Set<String> activeIds = activeIds(game);
         List<PlayerResponse> players = game.getPlayers().stream()
                 .map(player -> new PlayerResponse(Long.valueOf(player.getPlayerId()), player.getPlayerName(),
                         player.getPlayerId().equals(game.getHostPlayerId()), isActive(player),
-                        runtimeStore.isReady(gameId, player.getPlayerId())))
+                        runtimeStore.isReady(roomId, player.getPlayerId())))
                 .toList();
         Long hostId = Long.valueOf(game.getHostPlayerId());
-        return new GameResponse(gameId, playerId, hostId, hostId.equals(playerId), players,
-                runtime.gameState(), runtime.version(), runtimeStore.isAllReady(gameId, activeIds),
-                runtimeStore.delegationSeconds(gameId, activeIds),
-                runtimeStore.forceStartEligible(gameId, activeIds),
-                runtimeStore.forceStartSeconds(gameId, activeIds));
+        return new GameResponse(roomId, playerId, hostId, hostId.equals(playerId), players,
+                runtime.gameState(), runtime.version(), runtimeStore.isAllReady(roomId, activeIds),
+                runtimeStore.delegationSeconds(roomId, activeIds),
+                runtimeStore.forceStartEligible(roomId, activeIds),
+                runtimeStore.forceStartSeconds(roomId, activeIds));
     }
 
     //참가자 이름의 공백과 최대 길이를 검증하는 메서드
@@ -99,10 +99,10 @@ public class GameService {
     
     
     //게임 존재 여부를 확인하고 현재 참가자 목록을 함께 조회하는 메서드
-    private Game findRequiredGame(Long gameId) {
-        Game game = gameMapper.findGame(gameId);
+    private Game findRequiredGame(Long roomId) {
+        Game game = gameMapper.findGame(roomId);
         if (game == null) throw new NotFoundException("존재하지 않는 방입니다.");
-        game.setPlayers(gameMapper.findPlayerList(gameId));
+        game.setPlayers(gameMapper.findPlayerList(roomId));
         return game;
     }
 }

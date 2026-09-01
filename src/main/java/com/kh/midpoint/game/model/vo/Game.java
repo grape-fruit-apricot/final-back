@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Game {
-	private Long gameId;
+	private Long roomId;
     private String gameUuid;
     private String hostPlayerId;
     private LocalDateTime createdAt;

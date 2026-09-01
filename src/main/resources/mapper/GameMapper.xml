@@ -3,7 +3,7 @@
 <mapper namespace="com.kh.midpoint.game.model.dao.GameMapper">
     <!-- ROOM 조회 결과의 컬럼을 Game 객체 필드에 연결한다. -->
     <resultMap id="gameMap" type="com.kh.midpoint.game.model.vo.Game">
-        <id property="gameId" column="GAME_ID"/>
+        <id property="roomId" column="ROOM_ID"/>
         <result property="gameUuid" column="GAME_UUID"/>
         <result property="hostPlayerId" column="HOST_PLAYER_ID"/>
         <result property="createdAt" column="CREATED_AT"/>
@@ -13,52 +13,52 @@
     <resultMap id="playerMap" type="com.kh.midpoint.game.model.vo.GamePlayer">
         <id property="participantId" column="PARTICIPANT_ID"/>
         <result property="playerId" column="PLAYER_ID"/>
-        <result property="gameId" column="GAME_ID"/>
+        <result property="roomId" column="ROOM_ID"/>
         <result property="playerName" column="PLAYER_NAME"/>
         <result property="playerOrder" column="PLAYER_ORDER"/>
         <result property="playerStatus" column="PLAYER_STATUS"/>
     </resultMap>
 
-    <!-- 방을 생성하고 DB가 발급한 ROOM_ID를 Game.gameId에 다시 저장한다. -->
+    <!-- 방을 생성하고 DB가 발급한 ROOM_ID를 Game.roomId에 다시 저장한다. -->
     <!-- 첫 번째 참가자는 방장으로 저장하고 생성된 PARTICIPANT_ID를 객체에 돌려준다. -->
     <insert id="insertPlayer" parameterType="com.kh.midpoint.game.model.vo.GamePlayer"
             useGeneratedKeys="true" keyProperty="participantId" keyColumn="PARTICIPANT_ID">
         INSERT INTO PARTICIPANT
             (ROOM_ID, NICKNAME, IS_HOST, IS_READY, PREF_LAT, PREF_LNG, JOINED_AT)
         VALUES
-            (#{gameId}, #{playerName},
+            (#{roomId}, #{playerName},
              CASE WHEN #{playerOrder} = 1 THEN 'Y' ELSE 'N' END,
              'N', 0, 0, SYSTIMESTAMP)
     </insert>
 
     <select id="findGame" resultMap="gameMap">
-        SELECT R.ROOM_ID AS GAME_ID, R.ROOM_UUID AS GAME_UUID, R.CREATED_AT,
+        SELECT R.ROOM_ID, R.ROOM_UUID AS GAME_UUID, R.CREATED_AT,
                (SELECT TO_CHAR(P.PARTICIPANT_ID) FROM PARTICIPANT P
                 WHERE P.ROOM_ID = R.ROOM_ID AND P.IS_HOST = 'Y' AND P.LEFT_AT IS NULL
                 FETCH FIRST 1 ROW ONLY) AS HOST_PLAYER_ID
         FROM ROOM R
-        WHERE R.ROOM_ID = #{gameId}
+        WHERE R.ROOM_ID = #{roomId}
     </select>
 
     <!-- 참가·퇴장 트랜잭션이 같은 방을 동시에 변경하지 않도록 ROOM 행을 잠가 조회한다. -->
     <select id="findGameForUpdate" resultMap="gameMap">
-        SELECT R.ROOM_ID AS GAME_ID, R.ROOM_UUID AS GAME_UUID, R.CREATED_AT,
+        SELECT R.ROOM_ID, R.ROOM_UUID AS GAME_UUID, R.CREATED_AT,
                (SELECT TO_CHAR(P.PARTICIPANT_ID) FROM PARTICIPANT P
                 WHERE P.ROOM_ID = R.ROOM_ID AND P.IS_HOST = 'Y' AND P.LEFT_AT IS NULL
                 FETCH FIRST 1 ROW ONLY) AS HOST_PLAYER_ID
         FROM ROOM R
-        WHERE R.ROOM_ID = #{gameId}
+        WHERE R.ROOM_ID = #{roomId}
         FOR UPDATE
     </select>
 
     <!-- 퇴장하지 않은 참가자만 입장 순서대로 조회하고 ACTIVE 상태로 변환한다. -->
     <select id="findPlayerList" resultMap="playerMap">
-        SELECT PARTICIPANT_ID, TO_CHAR(PARTICIPANT_ID) AS PLAYER_ID, ROOM_ID AS GAME_ID,
+        SELECT PARTICIPANT_ID, TO_CHAR(PARTICIPANT_ID) AS PLAYER_ID, ROOM_ID,
                NICKNAME AS PLAYER_NAME,
                ROW_NUMBER() OVER (PARTITION BY ROOM_ID ORDER BY JOINED_AT, PARTICIPANT_ID) AS PLAYER_ORDER,
                CASE WHEN LEFT_AT IS NULL THEN 'ACTIVE' ELSE 'LEFT' END AS PLAYER_STATUS
         FROM PARTICIPANT
-        WHERE ROOM_ID = #{gameId}
+        WHERE ROOM_ID = #{roomId}
           AND LEFT_AT IS NULL
         ORDER BY PLAYER_ORDER
     </select>
@@ -67,32 +67,32 @@
     <select id="existsPlayerName" resultType="boolean">
         SELECT CASE WHEN COUNT(*) &gt; 0 THEN 1 ELSE 0 END
         FROM PARTICIPANT
-        WHERE ROOM_ID = #{gameId}
+        WHERE ROOM_ID = #{roomId}
           AND NICKNAME = #{playerName}
     </select>
 
     <select id="findNextPlayerOrder" resultType="int">
         SELECT COUNT(*) + 1
         FROM PARTICIPANT
-        WHERE ROOM_ID = #{gameId}
+        WHERE ROOM_ID = #{roomId}
     </select>
 
     <!-- 참가자 행을 실제 삭제하지 않고 LEFT_AT을 기록하는 소프트 삭제 방식이다. -->
     <update id="deletePlayer">
         UPDATE PARTICIPANT
         SET LEFT_AT = SYSTIMESTAMP, IS_READY = 'N', IS_HOST = 'N'
-        WHERE ROOM_ID = #{gameId}
+        WHERE ROOM_ID = #{roomId}
           AND PARTICIPANT_ID = #{playerId}
     </update>
 
     <delete id="deletePlayerList">
-        DELETE FROM PARTICIPANT WHERE ROOM_ID = #{gameId}
+        DELETE FROM PARTICIPANT WHERE ROOM_ID = #{roomId}
     </delete>
 
     <select id="findNextHostId" resultType="string">
         SELECT TO_CHAR(PARTICIPANT_ID)
         FROM PARTICIPANT
-        WHERE ROOM_ID = #{gameId}
+        WHERE ROOM_ID = #{roomId}
           AND LEFT_AT IS NULL
         ORDER BY JOINED_AT, PARTICIPANT_ID
         FETCH FIRST 1 ROW ONLY
@@ -101,11 +101,11 @@
     <update id="updateHost">
         UPDATE PARTICIPANT
         SET IS_HOST = CASE WHEN PARTICIPANT_ID = #{hostPlayerId} THEN 'Y' ELSE 'N' END
-        WHERE ROOM_ID = #{gameId}
+        WHERE ROOM_ID = #{roomId}
     </update>
 
     <delete id="deleteGame">
-        DELETE FROM ROOM WHERE ROOM_ID = #{gameId}
+        DELETE FROM ROOM WHERE ROOM_ID = #{roomId}
     </delete>
 
     <!-- 이미 결과가 존재하는 참가자는 승패 결과를 갱신한다. -->

@@ -21,8 +21,8 @@ public class GameRuntimeStore {
     private static final long TURN_TIMEOUT_MILLIS = 30_000;
 
 	//서버 메모리에 저장된 게임 상태를 실제 참가자 목록과 맞추는 메서드
-    public void participantsChanged(Long gameId, Set<String> activePlayerIds) {
-        RuntimeState state = get(gameId);
+    public void participantsChanged(Long roomId, Set<String> activePlayerIds) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             state.readyPlayerIds.retainAll(activePlayerIds);
             // 참가자 입장·퇴장으로 방 구성이 바뀌면 활성화된 버튼도 다시 30초를 기다린다.
@@ -86,8 +86,8 @@ public class GameRuntimeStore {
     }
 
     //게임 상태가 만들어져 게임이 시작됐는지 확인하는 메서드
-    public boolean gameStarted(Long gameId) {
-        RuntimeState state = get(gameId);
+    public boolean gameStarted(Long roomId) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             return !state.gameState.isEmpty();
         }
@@ -113,21 +113,21 @@ public class GameRuntimeStore {
     }
 	
 	 //게임 ID로 서버 메모리의 게임 상태를 조회하고 없으면 새로 만드는 메서드
-    public RuntimeState get(Long gameId) {
-        return states.computeIfAbsent(gameId, ignored -> new RuntimeState());
+    public RuntimeState get(Long roomId) {
+        return states.computeIfAbsent(roomId, ignored -> new RuntimeState());
     }
 	
 	 //특정 참가자가 준비 상태인지 확인하는 메서드
-    public boolean isReady(Long gameId, String playerId) {
-        RuntimeState state = get(gameId);
+    public boolean isReady(Long roomId, String playerId) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             return state.readyPlayerIds.contains(playerId);
         }
     }
 
     //방장 위임까지 남은 시간을 초 단위로 계산하는 메서드
-    public long delegationSeconds(Long gameId, Set<String> activePlayerIds) {
-        RuntimeState state = get(gameId);
+    public long delegationSeconds(Long roomId, Set<String> activePlayerIds) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             // 방장 외에 위임받을 참가자가 없으면 카운트다운을 시작하지 않는다.
             if (activePlayerIds.size() < 2 || !isAllReady(state, activePlayerIds)
@@ -138,8 +138,8 @@ public class GameRuntimeStore {
     }
 
     // 일부만 준비된 방에서 강제 시작 카운트다운을 보여줄 조건인지 확인한다.
-    public boolean forceStartEligible(Long gameId, Set<String> activePlayerIds) {
-        RuntimeState state = get(gameId);
+    public boolean forceStartEligible(Long roomId, Set<String> activePlayerIds) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             return forceStartEligible(state, activePlayerIds);
         }
@@ -153,8 +153,8 @@ public class GameRuntimeStore {
     }
     
     // 마지막 참가자 입장 또는 준비 변경 시점부터 강제 시작까지 남은 초를 계산한다.
-    public long forceStartSeconds(Long gameId, Set<String> activePlayerIds) {
-        RuntimeState state = get(gameId);
+    public long forceStartSeconds(Long roomId, Set<String> activePlayerIds) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             if (!forceStartEligible(state, activePlayerIds) || state.forceStartResetAt == null) return 0;
             long elapsed = Duration.between(state.forceStartResetAt, Instant.now()).getSeconds();
@@ -168,8 +168,8 @@ public class GameRuntimeStore {
     }
     
 	//현재 활성 참가자가 모두 준비 상태인지 확인하는 메서드
-    public boolean isAllReady(Long gameId, Set<String> activePlayerIds) {
-        RuntimeState state = get(gameId);
+    public boolean isAllReady(Long roomId, Set<String> activePlayerIds) {
+        RuntimeState state = get(roomId);
         synchronized (state) {
             return isAllReady(state, activePlayerIds);
         }
