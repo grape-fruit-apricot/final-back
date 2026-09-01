@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.selection.model.dao.SelectionMapper">
+
+	<select id="findSelection" parameterType="long" resultType="SelectionResponseDto">
+		SELECT
+			participant_id,
+			restaurant_id
+		FROM SELECTION
+		WHERE participant_id = #{participantId}
+	</select>
+
+	<insert id="insertSelection" parameterType="Selection">
+		INSERT INTO SELECTION (
+			selection_id,
+			participant_id,
+			restaurant_id
+		) VALUES (
+			SEQ_SELECTION.NEXTVAL,
+			#{participantId},
+			#{restaurantId}
+		)
+	</insert>
+
+	<update id="updateSelection" parameterType="Selection">
+		UPDATE SELECTION
+		SET restaurant_id = #{restaurantId}
+		WHERE participant_id = #{participantId}
+	</update>
+
+</mapper>
