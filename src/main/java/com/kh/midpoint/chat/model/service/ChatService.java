@@ -19,7 +19,6 @@ public class ChatService {
 	private final ChatMapper chatMapper;
 	private final RoomService roomService;
 
-
 	@Transactional(readOnly = true)
 	public ChatSession openSession(String roomUuid, Long participantId) {
 		if (roomUuid == null || roomUuid.isBlank()) {
@@ -28,6 +27,7 @@ public class ChatService {
 		if (participantId == null) {
 			throw new InvalidStateException("participantId 가 필요합니다.");
 		}
+
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 
 		String nickname = chatMapper.selectNicknameByParticipant(room.getRoomId(), participantId);

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -22,7 +23,9 @@ import com.kh.midpoint.chat.model.vo.ChatSession;
 import com.kh.midpoint.common.exception.InvalidStateException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
@@ -43,6 +46,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		registry.setApplicationDestinationPrefixes("/app");
 	}
 
+	/** CONNECT 시점에 방과 참가자를 검증하고 결과를 세션에 보관한다. */
 	@Override
 	public void configureClientInboundChannel(ChannelRegistration registration) {
 		registration.interceptors(new ChannelInterceptor() {
@@ -61,16 +65,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					throw new InvalidStateException("WebSocket 세션이 없습니다.");
 				}
 
-				String roomUuid = decode(accessor.getFirstNativeHeader("roomUuid"));
-				Long participantId = parseId(accessor.getFirstNativeHeader("participantId"));
+				try {
+					String roomUuid = decode(accessor.getFirstNativeHeader("roomUuid"));
+					Long participantId = parseId(accessor.getFirstNativeHeader("participantId"));
 
-				ChatSession session = chatService.openSession(roomUuid, participantId);
-				attributes.put(ChatSession.ATTR_KEY, session);
+					ChatSession session = chatService.openSession(roomUuid, participantId);
+					attributes.put(ChatSession.ATTR_KEY, session);
 
-				return message;
+					return message;
+
+				} catch (Exception e) {
+					log.warn("STOMP CONNECT 거부 - {}", e.toString());
+					throw new MessageDeliveryException(message, e.getMessage(), e);
+				}
 			}
 		});
 	}
+
 	private String decode(String raw) {
 		return raw == null ? null : URLDecoder.decode(raw, StandardCharsets.UTF_8);
 	}

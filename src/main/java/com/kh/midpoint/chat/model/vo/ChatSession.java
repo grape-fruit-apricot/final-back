@@ -5,7 +5,7 @@ public record ChatSession(
 	Long roomId,
 	Long participantId,
 	String nickname
-						  ) {
+) {
 
 	public static final String ATTR_KEY = "chatSession";
 

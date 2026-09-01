@@ -3,14 +3,13 @@
 <mapper namespace="com.kh.midpoint.chat.model.dao.ChatMapper">
 
 	<select id="selectNicknameByParticipant" resultType="java.lang.String">
-		SELECT 
-				NICKNAME
-		FROM 
-				PARTICIPANT
-		WHERE 
-				room_id = #{roomid}
-		  AND 
-		  		participant_id = #{participantId}
+		SELECT
+			   NICKNAME
+		  FROM
+		  	   PARTICIPANT
+		 WHERE
+		 	   ROOM_ID = #{roomId}
+		   AND PARTICIPANT_ID = #{participantId}
 	</select>
 
 </mapper>
