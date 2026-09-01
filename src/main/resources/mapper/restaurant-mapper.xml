@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.restaurant.model.dao.RestaurantMapper">
+
+	<insert id="insertRestaurant" parameterType="Restaurant">
+		INSERT INTO RESTAURANT (
+			restaurant_id,
+			room_id,
+			name,
+			source,
+			address,
+			lat,
+			lng,
+			added_by,
+			created_at
+		) VALUES (
+			SEQ_RESTAURANT.NEXTVAL,
+			(SELECT room_id FROM ROOM WHERE room_uuid = #{roomUuid}),
+			#{name},
+			'MANUAL',
+			#{address},
+			#{lat},
+			#{lng},
+			#{participantId},
+			SYSDATE
+		)
+	</insert>
+
+	<select id="findRestaurantList" resultType="RestaurantResponseDto">
+		SELECT
+			r.restaurant_id,
+			r.name,
+			r.source,
+			r.address,
+			r.lat,
+			r.lng,
+			r.added_by,
+			r.created_at
+		FROM RESTAURANT r
+		JOIN ROOM rm ON rm.room_id = r.room_id
+		WHERE rm.room_uuid = #{roomUuid}
+		ORDER BY r.created_at
+	</select>
+
+</mapper>

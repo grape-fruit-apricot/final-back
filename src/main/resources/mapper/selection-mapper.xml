@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.selection.model.dao.SelectionMapper">
+
+	<select id="findSelection" parameterType="long" resultType="SelectionResponseDto">
+		SELECT
+			participant_id,
+			restaurant_id
+		FROM SELECTION
+		WHERE participant_id = #{participantId}
+	</select>
+
+	<update id="upsertSelection" parameterType="Selection">
+		MERGE INTO SELECTION s
+		USING (SELECT #{participantId} AS participant_id, #{restaurantId} AS restaurant_id FROM dual) src
+		ON (s.participant_id = src.participant_id)
+		WHEN MATCHED THEN
+			UPDATE SET s.restaurant_id = src.restaurant_id
+		WHEN NOT MATCHED THEN
+			INSERT (selection_id, participant_id, restaurant_id)
+			VALUES (SEQ_SELECTION.NEXTVAL, src.participant_id, src.restaurant_id)
+	</update>
+
+</mapper>
