@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class RoomCreateResponseDto {
+public class RoomResponseDto {
 
 	private String roomUuid;
 	private int maxParticipants;
