@@ -14,7 +14,7 @@
 		)
 	</insert>
 
-	<select id="findRoom" resultType="RoomCreateResponseDto">
+	<select id="findRoom" resultType="RoomResponseDto">
 		SELECT
 			room_uuid,
 			max_participants,

@@ -1,6 +1,6 @@
 package com.kh.midpoint.room.model.dao;
 
-import com.kh.midpoint.room.model.dto.RoomCreateResponseDto;
+import com.kh.midpoint.room.model.dto.RoomResponseDto;
 import com.kh.midpoint.room.model.vo.Room;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -9,6 +9,6 @@ public interface RoomMapper {
 
 	void insertRoom(Room room);
 
-	RoomCreateResponseDto findRoom(String roomUuid);
+	RoomResponseDto findRoom(String roomUuid);
 
 }
