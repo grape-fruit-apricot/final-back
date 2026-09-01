@@ -1,14 +1,18 @@
 package com.kh.midpoint.room.model.service;
 
-import com.kh.midpoint.common.exception.NotFoundException;
-import com.kh.midpoint.room.model.dto.RoomCreateRequestDto;
-import com.kh.midpoint.room.model.dto.RoomResponseDto;
-import com.kh.midpoint.room.model.dao.RoomMapper;
-import com.kh.midpoint.room.model.vo.Room;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.common.exception.NotFoundException;
+import com.kh.midpoint.room.model.dao.RoomMapper;
+import com.kh.midpoint.room.model.dto.RoomCreateRequestDto;
+import com.kh.midpoint.room.model.dto.RoomResponseDto;
+import com.kh.midpoint.room.model.vo.Room;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoomService {

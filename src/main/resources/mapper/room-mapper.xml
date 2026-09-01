@@ -16,6 +16,7 @@
 
 	<select id="findRoom" resultType="RoomResponseDto">
 		SELECT
+			room_id,
 			room_uuid,
 			max_participants,
 			midpoint_lat,

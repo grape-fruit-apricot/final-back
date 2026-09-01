@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.participant.model.dao.ParticipantMapper">
+	
+	<insert id="insertParticipant" parameterType="Participant">
+		<selectKey keyProperty="participantId"
+					resultType="long"
+					order="BEFORE">
+        	SELECT SEQ_PARTICIPANT.NEXTVAL FROM DUAL
+    	</selectKey>
+    	
+		INSERT
+		  INTO
+		  	   PARTICIPANT (
+							 PARTICIPANT_ID
+						   , ROOM_ID
+						   , NICKNAME
+						   , IS_HOST
+						   , IS_READY
+						   , PREF_LAT
+						   , PREF_LNG
+						   , JOINED_AT
+						   ) 
+		VALUES (
+				 #{participantId}
+			   , #{roomId}
+			   , #{nickname}
+			   , CASE
+			   		WHEN NOT EXISTS (
+        							  SELECT
+        							  		 1
+        								FROM 
+        									 PARTICIPANT
+        							   WHERE 
+        							   		 ROOM_ID = #{roomId}
+    								)
+    								THEN 'Y'
+    								ELSE 'N'
+			   	  END
+			   , #{isReady}
+			   , #{prefLat}
+			   , #{prefLng}
+			   , SYSDATE
+			   )
+	</insert>
+	
+</mapper>
