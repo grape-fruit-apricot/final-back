@@ -2,17 +2,15 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.chat.model.dao.ChatMapper">
 
-	<select id="selectRoomIdByUuid" resultType="java.lang.Long">
-		SELECT room_id
-		FROM ROOM
-		WHERE room_uuid = #{roomUuid}
-	</select>
-
 	<select id="selectNicknameByParticipant" resultType="java.lang.String">
-		SELECT nickname
-		FROM PARTICIPANT
-		WHERE room_id = #{roomId}
-		  AND participant_id = #{participantId}
+		SELECT 
+				NICKNAME
+		FROM 
+				PARTICIPANT
+		WHERE 
+				room_id = #{roomid}
+		  AND 
+		  		participant_id = #{participantId}
 	</select>
 
 </mapper>
