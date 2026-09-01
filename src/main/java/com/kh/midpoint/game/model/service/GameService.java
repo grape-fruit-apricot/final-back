@@ -11,8 +11,8 @@ import com.kh.midpoint.common.exception.DuplicateException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.game.model.dao.GameMapper;
-import com.kh.midpoint.game.model.dto.GameDto.GameResponse;
-import com.kh.midpoint.game.model.dto.GameDto.PlayerResponse;
+import com.kh.midpoint.game.model.dto.GameResponse;
+import com.kh.midpoint.game.model.dto.PlayerResponse;
 import com.kh.midpoint.game.model.vo.Game;
 import com.kh.midpoint.game.model.vo.GamePlayer;
 

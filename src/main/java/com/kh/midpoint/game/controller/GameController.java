@@ -5,7 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.kh.midpoint.common.response.ApiResponse;
-import com.kh.midpoint.game.model.dto.GameDto.*;
+import com.kh.midpoint.game.model.dto.GameResponse;
+import com.kh.midpoint.game.model.dto.JoinRequest;
 import com.kh.midpoint.game.model.service.GameService;
 
 import jakarta.validation.Valid;
@@ -25,5 +26,7 @@ public class GameController {
                 .body(ApiResponse.created("게임 참가에 성공했습니다.",
                         gameService.insertPlayer(roomId, request.getPlayerName())));
     }
+	
+	
 	
 }
