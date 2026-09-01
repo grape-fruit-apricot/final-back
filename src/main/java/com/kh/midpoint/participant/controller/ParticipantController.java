@@ -15,9 +15,7 @@ import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/rooms/{roomUuid}/participants")
 @RequiredArgsConstructor

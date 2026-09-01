@@ -16,7 +16,6 @@
 						   , ROOM_ID
 						   , NICKNAME
 						   , IS_HOST
-						   , IS_READY
 						   , PREF_LAT
 						   , PREF_LNG
 						   , JOINED_AT
@@ -37,7 +36,6 @@
     								THEN 'Y'
     								ELSE 'N'
 			   	  END
-			   , #{isReady}
 			   , #{prefLat}
 			   , #{prefLng}
 			   , SYSDATE

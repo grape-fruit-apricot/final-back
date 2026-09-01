@@ -14,9 +14,7 @@ import com.kh.midpoint.room.model.service.RoomService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ParticipantService {
@@ -26,13 +24,11 @@ public class ParticipantService {
 	
 	@Transactional
 	public ParticipantResponseDto join(String roomUuid, JoinRoomRequest request) {
-		log.info(roomUuid);
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 
 		Participant participant = Participant.builder()
 				.roomId(room.getRoomId())
 				.nickname(request.getNickname())
-				.isReady("N")
 				.prefLat(request.getLat())
 				.prefLng(request.getLng())
 				.joinedAt(LocalDateTime.now())
@@ -58,7 +54,7 @@ public class ParticipantService {
 	}
 
 	private boolean isHost(ParticipantResponseDto participant) {
-		return participant.isHost();
+		return "Y".equals(participant.getIsHost());
 	}
 
 }
