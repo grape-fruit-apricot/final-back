@@ -64,6 +64,4 @@ tmp/
 # ===== CLAUDE =====
 CLAUDE.md
 TASK.md
-
-# 로컬 확인용 테스트 페이지 (커밋하지 않음)
-src/main/resources/static/*-test.html
+.claude/*
