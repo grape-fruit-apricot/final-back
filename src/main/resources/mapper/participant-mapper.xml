@@ -43,5 +43,32 @@
 			   , SYSDATE
 			   )
 	</insert>
-	
+
+	<select id="findParticipant" parameterType="long" resultType="ParticipantDto">
+		SELECT
+			participant_id,
+			room_id,
+			nickname,
+			is_host,
+			is_ready,
+			pref_lat,
+			pref_lng,
+			joined_at,
+			left_at
+		FROM PARTICIPANT
+		WHERE participant_id = #{participantId}
+	</select>
+
+	<delete id="deleteParticipant" parameterType="long">
+		DELETE FROM PARTICIPANT WHERE participant_id = #{participantId}
+	</delete>
+
+	<update id="updateNextHost" parameterType="long">
+		UPDATE PARTICIPANT
+		   SET is_host = 'Y'
+		 WHERE participant_id = (
+		 	SELECT MIN(participant_id) FROM PARTICIPANT WHERE room_id = #{roomId}
+		 )
+	</update>
+
 </mapper>
