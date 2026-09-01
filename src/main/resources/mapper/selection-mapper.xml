@@ -10,22 +10,15 @@
 		WHERE participant_id = #{participantId}
 	</select>
 
-	<insert id="insertSelection" parameterType="Selection">
-		INSERT INTO SELECTION (
-			selection_id,
-			participant_id,
-			restaurant_id
-		) VALUES (
-			SEQ_SELECTION.NEXTVAL,
-			#{participantId},
-			#{restaurantId}
-		)
-	</insert>
-
-	<update id="updateSelection" parameterType="Selection">
-		UPDATE SELECTION
-		SET restaurant_id = #{restaurantId}
-		WHERE participant_id = #{participantId}
+	<update id="upsertSelection" parameterType="Selection">
+		MERGE INTO SELECTION s
+		USING (SELECT #{participantId} AS participant_id, #{restaurantId} AS restaurant_id FROM dual) src
+		ON (s.participant_id = src.participant_id)
+		WHEN MATCHED THEN
+			UPDATE SET s.restaurant_id = src.restaurant_id
+		WHEN NOT MATCHED THEN
+			INSERT (selection_id, participant_id, restaurant_id)
+			VALUES (SEQ_SELECTION.NEXTVAL, src.participant_id, src.restaurant_id)
 	</update>
 
 </mapper>

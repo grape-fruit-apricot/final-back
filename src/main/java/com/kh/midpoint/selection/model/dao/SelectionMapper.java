@@ -9,8 +9,6 @@ public interface SelectionMapper {
 
 	SelectionResponseDto findSelection(Long participantId);
 
-	void insertSelection(Selection selection);
-
-	void updateSelection(Selection selection);
+	void upsertSelection(Selection selection);
 
 }

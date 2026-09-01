@@ -26,7 +26,7 @@ public class SelectionController {
 			@PathVariable String roomUuid,
 			@PathVariable Long participantId,
 			@Valid @RequestBody SelectionRequestDto requestDto) {
-		SelectionResponseDto responseDto = selectionService.selectRestaurant(participantId, requestDto);
+		SelectionResponseDto responseDto = selectionService.selectRestaurant(roomUuid, participantId, requestDto);
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.created("식당이 선택되었습니다.", responseDto));
 	}

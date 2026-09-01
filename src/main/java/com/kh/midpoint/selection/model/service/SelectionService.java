@@ -1,5 +1,7 @@
 package com.kh.midpoint.selection.model.service;
 
+import com.kh.midpoint.common.exception.InvalidStateException;
+import com.kh.midpoint.room.model.service.RoomService;
 import com.kh.midpoint.selection.model.dao.SelectionMapper;
 import com.kh.midpoint.selection.model.dto.SelectionRequestDto;
 import com.kh.midpoint.selection.model.dto.SelectionResponseDto;
@@ -13,19 +15,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class SelectionService {
 
 	private final SelectionMapper selectionMapper;
+	private final RoomService roomService;
 
 	@Transactional
-	public SelectionResponseDto selectRestaurant(Long participantId, SelectionRequestDto requestDto) {
+	public SelectionResponseDto selectRestaurant(String roomUuid, Long participantId, SelectionRequestDto requestDto) {
+		String stage = roomService.findRoom(roomUuid).getStage();
+		if (!"MIDPOINT_FOUND".equals(stage)) {
+			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 선택할 수 있습니다.");
+		}
+
 		Selection selection = Selection.builder()
 			.participantId(participantId)
 			.restaurantId(requestDto.getRestaurantId())
 			.build();
 
-		if (selectionMapper.findSelection(participantId) == null) {
-			selectionMapper.insertSelection(selection);
-		} else {
-			selectionMapper.updateSelection(selection);
-		}
+		selectionMapper.upsertSelection(selection);
 
 		return selectionMapper.findSelection(participantId);
 	}

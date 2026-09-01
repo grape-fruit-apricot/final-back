@@ -12,13 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class RestaurantService {
-
-	private static final Set<String> REGISTRABLE_STAGES = Set.of("MIDPOINT_FOUND", "RESOLVING", "RESOLVED");
 
 	private final RestaurantMapper restaurantMapper;
 	private final RoomService roomService;
@@ -26,8 +23,8 @@ public class RestaurantService {
 	@Transactional
 	public void insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		if (!REGISTRABLE_STAGES.contains(room.getStage())) {
-			throw new InvalidStateException("중간 지점이 결정된 이후에만 식당을 등록할 수 있습니다.");
+		if (!"MIDPOINT_FOUND".equals(room.getStage())) {
+			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 등록할 수 있습니다.");
 		}
 
 		Restaurant restaurant = Restaurant.builder()
