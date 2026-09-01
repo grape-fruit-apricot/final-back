@@ -2,7 +2,6 @@ package com.kh.midpoint.restaurant.controller;
 
 import com.kh.midpoint.common.response.ApiResponse;
 import com.kh.midpoint.restaurant.model.dto.RestaurantCreateRequestDto;
-import com.kh.midpoint.restaurant.model.dto.RestaurantCreateResponseDto;
 import com.kh.midpoint.restaurant.model.dto.RestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
 import jakarta.validation.Valid;
@@ -26,12 +25,12 @@ public class RestaurantController {
 	private final RestaurantService restaurantService;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<RestaurantCreateResponseDto>> insertRestaurant(
+	public ResponseEntity<ApiResponse<Void>> insertRestaurant(
 			@PathVariable String roomUuid,
 			@Valid @RequestBody RestaurantCreateRequestDto requestDto) {
-		RestaurantCreateResponseDto responseDto = restaurantService.insertRestaurant(roomUuid, requestDto);
+		restaurantService.insertRestaurant(roomUuid, requestDto);
 		return ResponseEntity.status(HttpStatus.CREATED)
-			.body(ApiResponse.created("식당이 등록되었습니다.", responseDto));
+			.body(ApiResponse.created("식당이 등록되었습니다.", null));
 	}
 
 	@GetMapping

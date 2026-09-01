@@ -3,7 +3,6 @@ package com.kh.midpoint.restaurant.model.service;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.restaurant.model.dao.RestaurantMapper;
 import com.kh.midpoint.restaurant.model.dto.RestaurantCreateRequestDto;
-import com.kh.midpoint.restaurant.model.dto.RestaurantCreateResponseDto;
 import com.kh.midpoint.restaurant.model.dto.RestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.vo.Restaurant;
 import com.kh.midpoint.room.model.dto.RoomResponseDto;
@@ -25,7 +24,7 @@ public class RestaurantService {
 	private final RoomService roomService;
 
 	@Transactional
-	public RestaurantCreateResponseDto insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
+	public void insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 		if (!REGISTRABLE_STAGES.contains(room.getStage())) {
 			throw new InvalidStateException("중간 지점이 결정된 이후에만 식당을 등록할 수 있습니다.");
@@ -40,15 +39,6 @@ public class RestaurantService {
 			.lng(requestDto.getLng())
 			.build();
 		restaurantMapper.insertRestaurant(restaurant);
-
-		RestaurantCreateResponseDto responseDto = new RestaurantCreateResponseDto();
-		responseDto.setParticipantId(requestDto.getParticipantId());
-		responseDto.setName(requestDto.getName());
-		responseDto.setSource("MANUAL");
-		responseDto.setAddress(requestDto.getAddress());
-		responseDto.setLat(requestDto.getLat());
-		responseDto.setLng(requestDto.getLng());
-		return responseDto;
 	}
 
 	@Transactional(readOnly = true)
