@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @ToString
 public class RoomResponseDto {
 
+	private Long roomId;
 	private String roomUuid;
 	private int maxParticipants;
 	private Double midpointLat;
