@@ -11,6 +11,8 @@ public class Participant {
 	Long participantId;
 	Long roomId;
 	String nickname;
+	String isHost;
+	String isReady;
 	Double prefLat;
 	Double prefLng;
 	LocalDateTime joinedAt;
