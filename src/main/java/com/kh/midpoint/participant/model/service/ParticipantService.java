@@ -25,10 +25,10 @@ public class ParticipantService {
 	private final RoomService roomService;
 	
 	@Transactional
-	public Long join(String roomUuid, JoinRoomRequest request) {
+	public ParticipantResponseDto join(String roomUuid, JoinRoomRequest request) {
 		log.info(roomUuid);
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		
+
 		Participant participant = Participant.builder()
 				.roomId(room.getRoomId())
 				.nickname(request.getNickname())
@@ -37,10 +37,10 @@ public class ParticipantService {
 				.prefLng(request.getLng())
 				.joinedAt(LocalDateTime.now())
 				.build();
-		
+
 		participantMapper.insertParticipant(participant);
 
-		return participant.getParticipantId();
+		return participantMapper.findParticipant(participant.getParticipantId());
 	}
 
 	@Transactional
