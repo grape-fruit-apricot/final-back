@@ -46,7 +46,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		registry.setApplicationDestinationPrefixes("/app");
 	}
 
-	/** CONNECT 시점에 방과 참가자를 검증하고 결과를 세션에 보관한다. */
 	@Override
 	public void configureClientInboundChannel(ChannelRegistration registration) {
 		registration.interceptors(new ChannelInterceptor() {
