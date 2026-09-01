@@ -44,7 +44,7 @@
 			   )
 	</insert>
 
-	<select id="findParticipant" parameterType="long" resultType="ParticipantDto">
+	<select id="findParticipant" parameterType="long" resultType="ParticipantResponseDto">
 		SELECT
 			participant_id,
 			room_id,

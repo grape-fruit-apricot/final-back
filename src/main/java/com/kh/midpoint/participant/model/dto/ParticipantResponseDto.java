@@ -11,7 +11,7 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class ParticipantDto {
+public class ParticipantResponseDto {
 	private Long participantId;
 	private Long roomId;
 	private String nickname;
