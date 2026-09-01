@@ -29,7 +29,6 @@ public class RoomService {
 	@Transactional(readOnly = true)
 	public RoomResponseDto findRoom(String roomUuid) {
 		RoomResponseDto responseDto = roomMapper.findRoom(roomUuid);
-		log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ response : {}", responseDto);
 		if (responseDto == null) {
 			throw new NotFoundException("존재하지 않는 방입니다: " + roomUuid);
 		}

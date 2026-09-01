@@ -27,7 +27,6 @@ public class ParticipantController {
 	
 	@PostMapping("/{roomUuid}")
 	public ResponseEntity<ApiResponse<Map<String, String>>> join(@PathVariable("roomUuid") String roomUuid, @RequestBody JoinRoomRequest request) {
-		log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ {}",roomUuid);
 		Long participantId = participantService.join(roomUuid, request);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.created("참여자가 등록되었습니다.", Map.of("id", String.valueOf(participantId))));

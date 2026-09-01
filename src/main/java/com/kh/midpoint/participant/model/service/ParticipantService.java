@@ -26,8 +26,6 @@ public class ParticipantService {
 	public Long join(String roomUuid, JoinRoomRequest request) {
 		log.info(roomUuid);
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ room : {}", room);
-		log.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ room Id : {}", room.getRoomId());
 		
 		Participant participant = Participant.builder()
 				.roomId(room.getRoomId())
