@@ -27,7 +27,7 @@ public class MidPointFinder {
 
     public NearbyStationDto findMidPoint(List<ParticipantResponseDto> participants) {
     	validParticipant(participants);
-    	
+
         double centroidLat = participants.stream()
                 						 .mapToDouble(ParticipantResponseDto::getPrefLat)
                 						 .average()
