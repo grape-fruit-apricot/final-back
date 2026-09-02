@@ -22,6 +22,26 @@
 			   )
 	</insert>
 
+	<update id="updateMidpoint" parameterType="Room">
+		UPDATE
+			   ROOM
+		   SET
+			   MIDPOINT_LAT = #{midpointLat}
+			 , MIDPOINT_LNG = #{midpointLng}
+			 , MIDPOINT_SOURCE = #{midpointSource}
+		 WHERE
+			   ROOM_ID = #{roomId}
+	</update>
+
+	<update id="updateStage" parameterType="Room">
+		UPDATE
+			   ROOM
+		   SET
+			   STAGE = #{stage}
+		 WHERE
+			   ROOM_ID = #{roomId}
+	</update>
+
 	<select id="findRoom" resultType="RoomResponseDto">
 		SELECT
 			   ROOM_ID

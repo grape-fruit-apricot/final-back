@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.route.model.dao.RouteMapper">
+
+	<insert id="insertRoute" parameterType="ParticipantRoute">
+		INSERT
+		  INTO
+			   PARTICIPANT_ROUTE (
+							   	   ROUTE_ID
+							 	 , ROOM_ID
+							 	 , PARTICIPANT_ID
+							 	 , TRAVEL_MODE
+							 	 , TIME_MINUTES
+							 	 )
+		VALUES
+			   (
+				 SEQ_PARTICIPANT_ROUTE.NEXTVAL
+			   , #{roomId}
+			   , #{participantId}
+			   , 'WALK'
+			   , #{timeMinutes}
+			   )
+	</insert>
+
+	<insert id="insertRoutePointList">
+		BEGIN
+		<foreach collection="list" item="point">
+			INSERT
+			  INTO
+				   PARTICIPANT_ROUTE_POINT (
+										   	 POINT_ID
+										   , ROUTE_ID
+										   , POINT_ORDER
+										   , LAT
+										   , LNG
+										   )
+			VALUES
+				   (
+					 SEQ_PARTICIPANT_ROUTE_POINT.NEXTVAL
+				   , (
+					   SELECT
+							  ROUTE_ID
+						 FROM
+							  PARTICIPANT_ROUTE
+						WHERE
+							  PARTICIPANT_ID = #{point.participantId}
+					 )
+				   , #{point.pointOrder}
+				   , #{point.lat}
+				   , #{point.lng}
+				   );
+		</foreach>
+		END;
+	</insert>
+
+	<select id="findRouteList" parameterType="long" resultType="ParticipantRouteQueryDto">
+		SELECT
+			   PR.ROUTE_ID
+			 , PR.PARTICIPANT_ID
+			 , P.NICKNAME
+			 , PR.TIME_MINUTES
+		  FROM
+			   PARTICIPANT_ROUTE PR
+		  JOIN
+			   PARTICIPANT P
+			ON
+			   P.PARTICIPANT_ID = PR.PARTICIPANT_ID
+		 WHERE
+			   PR.ROOM_ID = #{roomId}
+		 ORDER
+			BY
+			   PR.PARTICIPANT_ID
+	</select>
+
+	<select id="findRoutePointList" parameterType="long" resultType="RoutePointDto">
+		SELECT
+			   LAT
+			 , LNG
+		  FROM
+			   PARTICIPANT_ROUTE_POINT
+		 WHERE
+			   ROUTE_ID = #{routeId}
+		 ORDER
+			BY
+			   POINT_ORDER
+	</select>
+
+</mapper>

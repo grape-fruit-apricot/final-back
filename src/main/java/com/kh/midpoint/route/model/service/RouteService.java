@@ -8,9 +8,16 @@ import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 import com.kh.midpoint.restaurant.model.dto.RestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
+import com.kh.midpoint.room.model.dto.RoomResponseDto;
 import com.kh.midpoint.room.model.service.RoomService;
+import com.kh.midpoint.roomresult.model.service.RoomResultService;
+import com.kh.midpoint.roomresult.model.vo.RoomResult;
+import com.kh.midpoint.route.model.dao.RouteMapper;
+import com.kh.midpoint.route.model.dto.ParticipantRouteQueryDto;
 import com.kh.midpoint.route.model.dto.ParticipantRouteResponseDto;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
+import com.kh.midpoint.route.model.vo.ParticipantRoute;
+import com.kh.midpoint.route.model.vo.ParticipantRoutePoint;
 import com.kh.midpoint.selection.model.dto.SelectionResponseDto;
 import com.kh.midpoint.selection.model.service.SelectionService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,13 +41,44 @@ public class RouteService {
 	private final ParticipantService participantService;
 	private final SelectionService selectionService;
 	private final RestaurantService restaurantService;
+	private final RoomResultService roomResultService;
+	private final RouteMapper routeMapper;
 	private final TmapRouteClient tmapRouteClient;
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public RouteResponseDto findRoute(String roomUuid) {
-		roomService.findRoom(roomUuid);
-
+		RoomResponseDto room = roomService.findRoom(roomUuid);
 		List<ParticipantResponseDto> participants = participantService.findAllParticipants(roomUuid);
+		RestaurantResponseDto restaurant = findRestaurant(roomUuid, room.getRoomId(), participants);
+
+		insertMissingRouteList(room.getRoomId(), participants, restaurant);
+		roomService.updateStage(room.getRoomId(), "RESOLVED");
+
+		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId()));
+	}
+
+	private RestaurantResponseDto findRestaurant(String roomUuid, Long roomId,
+			List<ParticipantResponseDto> participants) {
+		RestaurantResponseDto restaurant = roomResultService.findRoomResult(roomId);
+		if (restaurant != null) {
+			return restaurant;
+		}
+
+		List<Long> restaurantIds = findSelectedRestaurantIdList(participants);
+		Long restaurantId = findRandomRestaurantId(restaurantIds);
+		restaurant = findRestaurant(roomUuid, restaurantId);
+
+		RoomResult roomResult = RoomResult.builder()
+				.roomId(roomId)
+				.restaurantId(restaurantId)
+				.build();
+		roomResultService.insertRoomResult(roomResult);
+
+		return restaurant;
+	}
+
+	private List<Long> findSelectedRestaurantIdList(
+			List<ParticipantResponseDto> participants) {
 		List<Long> restaurantIds = participants.stream()
 				.map(participant -> selectionService.findSelection(participant.getParticipantId()))
 				.filter(Objects::nonNull)
@@ -46,37 +86,90 @@ public class RouteService {
 				.distinct()
 				.toList();
 
+		validateSelectedRestaurantIdList(restaurantIds);
+		return restaurantIds;
+	}
+
+	private void validateSelectedRestaurantIdList(List<Long> restaurantIds) {
 		if (restaurantIds.isEmpty()) {
 			throw new InvalidStateException("식당 선택을 완료한 참가자가 없습니다.");
 		}
+	}
 
-		Long restaurantId = restaurantIds.get(ThreadLocalRandom.current().nextInt(restaurantIds.size()));
-		RestaurantResponseDto restaurant = restaurantService.findRestaurantList(roomUuid).stream()
+	private Long findRandomRestaurantId(List<Long> restaurantIds) {
+		int index = ThreadLocalRandom.current().nextInt(restaurantIds.size());
+		return restaurantIds.get(index);
+	}
+
+	private RestaurantResponseDto findRestaurant(String roomUuid, Long restaurantId) {
+		return restaurantService.findRestaurantList(roomUuid).stream()
 				.filter(item -> restaurantId.equals(item.getRestaurantId()))
 				.findFirst()
 				.orElseThrow(() -> new NotFoundException("선정된 식당을 찾을 수 없습니다: " + restaurantId));
+	}
 
-		List<ParticipantRouteResponseDto> participantRoutes = new ArrayList<>();
+	private void insertMissingRouteList(Long roomId,
+			List<ParticipantResponseDto> participants, RestaurantResponseDto restaurant) {
+		Set<Long> savedParticipantIds = routeMapper.findRouteList(roomId).stream()
+				.map(ParticipantRouteQueryDto::getParticipantId)
+				.collect(Collectors.toSet());
+
 		for (ParticipantResponseDto participant : participants) {
-			try {
-				TmapRouteDto route = tmapRouteClient.getPedestrianRoute(
-						participant.getPrefLng(),
-						participant.getPrefLat(),
-						restaurant.getLng(),
-						restaurant.getLat()
-				);
-				participantRoutes.add(new ParticipantRouteResponseDto(
-						participant.getParticipantId(),
-						participant.getNickname(),
-						route.getTimeMinutes(),
-						route.getPoints()
-				));
-			} catch (RuntimeException e) {
-				log.warn("참가자 {} 도보 경로 조회 실패", participant.getParticipantId(), e);
+			if (isSavedRoute(savedParticipantIds, participant.getParticipantId())) {
+				continue;
+			}
+
+			TmapRouteDto route = findParticipantRoute(participant, restaurant);
+			if (route != null) {
+				insertRoute(roomId, participant.getParticipantId(), route);
 			}
 		}
+	}
 
-		return new RouteResponseDto(restaurant, participantRoutes);
+	private boolean isSavedRoute(Set<Long> savedParticipantIds, Long participantId) {
+		return savedParticipantIds.contains(participantId);
+	}
+
+	private TmapRouteDto findParticipantRoute(ParticipantResponseDto participant,
+			RestaurantResponseDto restaurant) {
+		try {
+			return tmapRouteClient.getPedestrianRoute(
+					participant.getPrefLng(), participant.getPrefLat(),
+					restaurant.getLng(), restaurant.getLat());
+		} catch (RuntimeException e) {
+			log.warn("참가자 {} 도보 경로 조회 실패", participant.getParticipantId(), e);
+			return null;
+		}
+	}
+
+	private void insertRoute(Long roomId, Long participantId, TmapRouteDto route) {
+		ParticipantRoute participantRoute = ParticipantRoute.builder()
+				.roomId(roomId)
+				.participantId(participantId)
+				.timeMinutes(route.getTimeMinutes())
+				.build();
+		routeMapper.insertRoute(participantRoute);
+
+		List<ParticipantRoutePoint> routePoints = new ArrayList<>();
+		for (int index = 0; index < route.getPoints().size(); index++) {
+			routePoints.add(ParticipantRoutePoint.builder()
+					.participantId(participantId)
+					.pointOrder(index)
+					.lat(route.getPoints().get(index).getLat())
+					.lng(route.getPoints().get(index).getLng())
+					.build());
+		}
+		routeMapper.insertRoutePointList(routePoints);
+	}
+
+	private List<ParticipantRouteResponseDto> findParticipantRouteList(Long roomId) {
+		return routeMapper.findRouteList(roomId).stream()
+				.map(route -> new ParticipantRouteResponseDto(
+						route.getParticipantId(),
+						route.getNickname(),
+						route.getTimeMinutes(),
+						routeMapper.findRoutePointList(route.getRouteId())))
+				.toList();
 	}
 
 }
