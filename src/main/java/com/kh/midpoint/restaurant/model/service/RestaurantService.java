@@ -1,7 +1,9 @@
 package com.kh.midpoint.restaurant.model.service;
 
 import com.kh.midpoint.common.exception.InvalidStateException;
+import com.kh.midpoint.external.kakao.KakaoLocalClient;
 import com.kh.midpoint.restaurant.model.dao.RestaurantMapper;
+import com.kh.midpoint.restaurant.model.dto.KakaoRestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.dto.RestaurantCreateRequestDto;
 import com.kh.midpoint.restaurant.model.dto.RestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.vo.Restaurant;
@@ -19,6 +21,7 @@ public class RestaurantService {
 
 	private final RestaurantMapper restaurantMapper;
 	private final RoomService roomService;
+	private final KakaoLocalClient kakaoLocalClient;
 
 	@Transactional
 	public void insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
@@ -42,6 +45,12 @@ public class RestaurantService {
 	public List<RestaurantResponseDto> findRestaurantList(String roomUuid) {
 		roomService.findRoom(roomUuid);
 		return restaurantMapper.findRestaurantList(roomUuid);
+	}
+
+	@Transactional(readOnly = true)
+	public List<KakaoRestaurantResponseDto> findNearbyRestaurantList(String roomUuid, Double lat, Double lng) {
+		roomService.findRoom(roomUuid);
+		return kakaoLocalClient.findNearbyRestaurantList(lat, lng);
 	}
 
 }
