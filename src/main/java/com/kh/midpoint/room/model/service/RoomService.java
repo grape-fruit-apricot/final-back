@@ -35,4 +35,16 @@ public class RoomService {
 		return responseDto;
 	}
 
+	@Transactional
+	public void updateMidpoint(String roomUuid, Double lat, Double lng, String source) {
+		RoomResponseDto room = findRoom(roomUuid);
+		Room updated = Room.builder()
+			.roomId(room.getRoomId())
+			.midpointLat(lat)
+			.midpointLng(lng)
+			.midpointSource(source)
+			.build();
+		roomMapper.updateMidpoint(updated);
+	}
+
 }

@@ -8,22 +8,29 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kh.midpoint.external.kakao.NearbyStationDto;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
+import com.kh.midpoint.room.model.service.RoomService;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class MidPointService {
-	
+
 	private final MidPointFinder midpointFinder;
 	private final ParticipantService participantService;
+	private final RoomService roomService;
 
-	@Transactional(readOnly = true)
+	@Transactional
 	public NearbyStationDto findMidpoint(String roomUuid) {
 	    List<ParticipantResponseDto> participants = participantService.findAllParticipants(roomUuid);
 
-	    return midpointFinder.findMidPoint(participants);
+	    NearbyStationDto midpoint = midpointFinder.findMidPoint(participants);
+
+	    String source = midpoint.getName().equals(midpointFinder.getCenterName()) ? "FALLBACK" : "KAKAO";
+	    roomService.updateMidpoint(roomUuid, midpoint.getLat(), midpoint.getLng(), source);
+
+	    return midpoint;
 	}
-	
+
 }
 

@@ -35,8 +35,20 @@
 			 , EXPIRES_AT
 		  FROM 
 		  	   ROOM
-		 WHERE 
+		 WHERE
 		 	   ROOM_UUID = #{roomUuid}
 	</select>
+
+	<update id="updateMidpoint" parameterType="Room">
+		UPDATE
+			   ROOM
+		   SET
+			   MIDPOINT_LAT = #{midpointLat}
+			 , MIDPOINT_LNG = #{midpointLng}
+			 , MIDPOINT_SOURCE = #{midpointSource}
+			 , STAGE = 'MIDPOINT_FOUND'
+		 WHERE
+			   ROOM_ID = #{roomId}
+	</update>
 
 </mapper>

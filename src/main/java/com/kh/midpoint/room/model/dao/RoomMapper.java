@@ -11,4 +11,6 @@ public interface RoomMapper {
 
 	RoomResponseDto findRoom(String roomUuid);
 
+	void updateMidpoint(Room room);
+
 }
