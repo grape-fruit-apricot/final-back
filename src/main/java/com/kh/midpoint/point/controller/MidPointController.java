@@ -6,6 +6,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.midpoint.common.response.ApiResponse;
@@ -23,12 +24,13 @@ public class MidPointController {
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@PostMapping("/{roomUuid}/midpoint")
-	public ResponseEntity<ApiResponse<NearbyStationDto>> findMidpoint(@PathVariable("roomUuid") String roomUuid) {
+	public ResponseEntity<ApiResponse<NearbyStationDto>> findMidpoint(
+			@PathVariable("roomUuid") String roomUuid,
+			@RequestParam Long participantId) {
+		NearbyStationDto midpoint = midPointService.findMidpoint(roomUuid, participantId);
+		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/midpoint", midpoint);
 
-	    NearbyStationDto midpoint = midPointService.findMidpoint(roomUuid);
-	    messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/midpoint", midpoint);
-
-	    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created("중간지점을 찾았습니다", midpoint));
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created("중간지점을 찾았습니다", midpoint));
 	}
 
 }
