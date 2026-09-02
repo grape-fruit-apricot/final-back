@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.chat.model.dao.ChatMapper">
+
+	<select id="selectNicknameByRoomIdAndParticipantId" resultType="java.lang.String">
+		SELECT
+			   NICKNAME
+		  FROM
+		  	   PARTICIPANT
+		 WHERE
+		 	   ROOM_ID = #{roomId}
+		   AND PARTICIPANT_ID = #{participantId}
+	</select>
+
+</mapper>

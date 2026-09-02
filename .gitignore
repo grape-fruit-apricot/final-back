@@ -65,3 +65,6 @@ tmp/
 CLAUDE.md
 TASK.md
 .claude/*
+
+# 로컬 확인용 테스트 페이지
+src/main/resources/static/*-test.html
