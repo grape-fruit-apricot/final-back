@@ -8,27 +8,77 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import com.kh.midpoint.restaurant.model.dto.KakaoRestaurantResponseDto;
+
 import tools.jackson.databind.JsonNode;
 
 @Component
 public class KakaoLocalClient {
-
-	private final RestClient categoryClient;
-	
-	@Value("${search.category.url}")
-	private String categoryUrl;
 
 	@Value("${search.category.subway.code}")
 	private String subwayCode;
 
 	@Value("${search.category.subway.radius}")
 	private String subwayRadius;
-	
-	public KakaoLocalClient(@Value("${kakao.rest-api-key}") String kakaoRestApiKey) {
+
+	@Value("${search.category.restaurant.code}")
+	private String restaurantCode;
+
+	@Value("${search.category.restaurant.radius}")
+	private int restaurantRadius;
+
+	@Value("${search.category.restaurant.result-size}")
+	private int restaurantResultSize;
+
+	private final RestClient categoryClient;
+
+	public KakaoLocalClient(@Value("${kakao.rest-api-key}") String kakaoRestApiKey,
+							@Value("${search.category.url}") String categoryUrl) {
 		this.categoryClient = RestClient.builder()
 				.baseUrl(categoryUrl)
 				.defaultHeader("Authorization", "KakaoAK " + kakaoRestApiKey)
 				.build();
+	}
+
+	@Cacheable(cacheNames = "restaurants-nearby", key = "#lat + ',' + #lng")
+	public List<KakaoRestaurantResponseDto> findNearbyRestaurantList(Double lat, Double lng) {
+		JsonNode response = categoryClient.get()
+				.uri(uriBuilder -> uriBuilder
+						.queryParam("category_group_code", restaurantCode)
+						.queryParam("x", lng)
+						.queryParam("y", lat)
+						.queryParam("radius", restaurantRadius)
+						.queryParam("sort", "accuracy")
+						.queryParam("size", restaurantResultSize)
+						.build())
+				.retrieve()
+				.body(JsonNode.class);
+
+		return toRestaurantResponseList(response);
+	}
+
+	private List<KakaoRestaurantResponseDto> toRestaurantResponseList(JsonNode response) {
+		List<KakaoRestaurantResponseDto> restaurants = new ArrayList<>();
+		if (response == null) {
+			return restaurants;
+		}
+
+		for (JsonNode document : response.path("documents")) {
+			restaurants.add(new KakaoRestaurantResponseDto(
+					document.path("id").asString(),
+					document.path("place_name").asString(),
+					document.path("category_name").asString(),
+					document.path("address_name").asString(),
+					document.path("road_address_name").asString(),
+					document.path("phone").asString(),
+					document.path("place_url").asString(),
+					document.path("y").asDouble(),
+					document.path("x").asDouble(),
+					document.path("distance").asInt(0)
+			));
+		}
+
+		return restaurants;
 	}
 	
 	@Cacheable(cacheNames = "stations-nearby", key = "#x + ',' + #y + ',' + #count")
