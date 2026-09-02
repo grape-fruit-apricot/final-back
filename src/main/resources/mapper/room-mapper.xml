@@ -3,30 +3,40 @@
 <mapper namespace="com.kh.midpoint.room.model.dao.RoomMapper">
 
 	<insert id="insertRoom" parameterType="Room">
-		INSERT INTO ROOM (
-			room_id,
-			room_uuid
-			<if test="maxParticipants != null">, max_participants</if>
-		) VALUES (
-			SEQ_ROOM.NEXTVAL,
-			#{roomUuid}
-			<if test="maxParticipants != null">, #{maxParticipants}</if>
-		)
+		INSERT 
+		  INTO 
+		  	   ROOM (
+					  ROOM_ID
+					, ROOM_UUID
+					<if test="maxParticipants != null">
+					, MAX_PARTICIPANTS
+					</if>
+					)
+		VALUES 
+			   (
+				 SEQ_ROOM.NEXTVAL
+			   , #{roomUuid}
+			   <if test="maxParticipants != null">
+			   , #{maxParticipants}
+			   </if>
+			   )
 	</insert>
 
 	<select id="findRoom" resultType="RoomResponseDto">
 		SELECT
-			room_id,
-			room_uuid,
-			max_participants,
-			midpoint_lat,
-			midpoint_lng,
-			midpoint_source,
-			stage,
-			created_at,
-			expires_at
-		FROM ROOM
-		WHERE room_uuid = #{roomUuid}
+			   ROOM_ID
+			 , ROOM_UUID
+			 , MAX_PARTICIPANTS
+			 , MIDPOINT_LAT
+			 , MIDPOINT_LNG
+			 , MIDPOINT_SOURCE
+			 , STAGE
+			 , CREATED_AT
+			 , EXPIRES_AT
+		  FROM 
+		  	   ROOM
+		 WHERE 
+		 	   ROOM_UUID = #{roomUuid}
 	</select>
 
 </mapper>

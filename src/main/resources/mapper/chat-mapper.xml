@@ -2,14 +2,77 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.chat.model.dao.ChatMapper">
 
-	<select id="selectNicknameByRoomIdAndParticipantId" resultType="java.lang.String">
+	<select id="findNicknameByRoomIdAndParticipantId" resultType="java.lang.String">
 		SELECT
 			   NICKNAME
-		  FROM
+		  FROM 
 		  	   PARTICIPANT
-		 WHERE
+		 WHERE 
 		 	   ROOM_ID = #{roomId}
 		   AND PARTICIPANT_ID = #{participantId}
+	</select>
+
+	<insert id="insertMessage" parameterType="ChatMessage">
+		<selectKey keyProperty="messageId" resultType="long" order="BEFORE">
+			SELECT SEQ_CHAT_MESSAGE.NEXTVAL FROM DUAL
+		</selectKey>
+
+		INSERT 
+		  INTO 
+		       CHAT_MESSAGE (
+							 MESSAGE_ID
+						   , ROOM_ID
+						   , PARTICIPANT_ID
+						   , CONTENT
+						   , MSG_TYPE
+						   , CREATED_AT
+						   )
+		VALUES (
+				 #{messageId}
+			   , #{roomId}
+			   , #{participantId}
+			   , #{content}
+			   , #{msgType}
+			   , SYSTIMESTAMP
+			   )
+	</insert>
+
+	<select id="findMessage" resultType="ChatMessageResponseDto">
+		SELECT
+			   M.MESSAGE_ID
+			 , M.PARTICIPANT_ID
+			 , NVL(P.NICKNAME, '알 수 없음') AS NICKNAME
+			 , M.CONTENT
+			 , M.MSG_TYPE
+			 , M.CREATED_AT
+		  FROM 
+		  	   CHAT_MESSAGE M
+		  LEFT JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
+		 WHERE 
+		 	   M.MESSAGE_ID = #{messageId}
+	</select>
+
+	<select id="findMessageList" resultType="ChatMessageResponseDto">
+		SELECT
+			   *
+		  FROM 
+		  	   (
+				SELECT
+					   M.MESSAGE_ID
+					 , M.PARTICIPANT_ID
+					 , NVL(P.NICKNAME, '알 수 없음') AS NICKNAME
+					 , M.CONTENT
+					 , M.MSG_TYPE
+					 , M.CREATED_AT
+				  FROM 
+				  	   CHAT_MESSAGE M
+				  LEFT JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
+				 WHERE 
+				 	   M.ROOM_ID = #{roomId}
+				 ORDER BY M.MESSAGE_ID DESC
+				 FETCH FIRST 100 ROWS ONLY
+		  	   )
+		 ORDER BY MESSAGE_ID
 	</select>
 
 </mapper>
