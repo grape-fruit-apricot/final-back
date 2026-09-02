@@ -24,7 +24,7 @@ public class ChatController {
 	private final ChatService chatService;
 	private final SimpMessagingTemplate messagingTemplate;
 
-	@MessageMapping("/chat.enter")
+	@MessageMapping("/chat/enter")
 	public void enter(SimpMessageHeaderAccessor accessor) {
 		ChatSession session = findSession(accessor);
 		if (session == null) {
@@ -33,7 +33,7 @@ public class ChatController {
 		broadcast(session, MsgType.ENTER, session.nickname() + "님이 입장하셨습니다.");
 	}
 
-	@MessageMapping("/chat.send")
+	@MessageMapping("/chat/send")
 	public void send(ChatSendRequestDto request, SimpMessageHeaderAccessor accessor) {
 		ChatSession session = findSession(accessor);
 		if (session == null) {
@@ -49,7 +49,7 @@ public class ChatController {
 		broadcast(session, MsgType.TALK, content);
 	}
 
-	@MessageMapping("/chat.leave")
+	@MessageMapping("/chat/leave")
 	public void leave(SimpMessageHeaderAccessor accessor) {
 		ChatSession session = findSession(accessor);
 		if (session == null) {
