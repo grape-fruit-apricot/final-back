@@ -11,14 +11,14 @@ import com.kh.midpoint.chat.model.vo.ChatMessage;
 @Mapper
 public interface ChatMapper {
 
-	String selectNicknameByRoomIdAndParticipantId(@Param("roomId") Long roomId,
+	String findNicknameByRoomIdAndParticipantId(@Param("roomId") Long roomId,
 			@Param("participantId") Long participantId);
 
 	/** 저장 후 message 의 messageId 에 채번된 값이 채워진다 */
 	void insertMessage(ChatMessage message);
 
-	ChatMessageResponseDto selectMessageByMessageId(Long messageId);
+	ChatMessageResponseDto findMessage(Long messageId);
 
-	List<ChatMessageResponseDto> selectMessagesByRoomId(Long roomId);
+	List<ChatMessageResponseDto> findMessageList(Long roomId);
 
 }

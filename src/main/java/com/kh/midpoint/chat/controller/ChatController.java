@@ -16,15 +16,6 @@ import com.kh.midpoint.chat.model.vo.MsgType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * STOMP 전용 컨트롤러.
- *
- *   발행 : /app/chat.enter, /app/chat.send, /app/chat.leave
- *   구독 : /topic/room/{roomUuid}
- *
- * 방과 참가자는 CONNECT 때 검증해 세션에 담아뒀으므로, 여기서는 세션 값만 사용한다.
- * 클라이언트가 본문에 다른 사람의 정보를 실어 보내도 반영되지 않는다.
- */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
@@ -72,7 +63,6 @@ public class ChatController {
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid(), saved);
 	}
 
-	/** CONNECT 때 저장해둔 세션 정보를 꺼낸다 */
 	private ChatSession findSession(SimpMessageHeaderAccessor accessor) {
 		Map<String, Object> attributes = accessor.getSessionAttributes();
 		if (attributes == null) {

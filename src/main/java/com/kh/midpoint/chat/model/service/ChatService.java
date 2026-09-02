@@ -29,7 +29,7 @@ public class ChatService {
 
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 
-		String nickname = chatMapper.selectNicknameByRoomIdAndParticipantId(room.getRoomId(), participantId);
+		String nickname = chatMapper.findNicknameByRoomIdAndParticipantId(room.getRoomId(), participantId);
 		if (nickname == null) {
 			throw new ForbiddenException("이 방의 참가자가 아닙니다.");
 		}
@@ -37,7 +37,6 @@ public class ChatService {
 		return new ChatSession(roomUuid, room.getRoomId(), participantId, nickname);
 	}
 
-	/** 메시지를 저장하고, 화면에 뿌릴 형태로 되돌려준다. */
 	@Transactional
 	public ChatMessageResponseDto saveMessage(ChatSession session, String msgType, String content) {
 		ChatMessage message = ChatMessage.builder()
@@ -49,14 +48,13 @@ public class ChatService {
 
 		chatMapper.insertMessage(message);
 
-		return chatMapper.selectMessageByMessageId(message.getMessageId());
+		return chatMapper.findMessage(message.getMessageId());
 	}
 
-	/** 방 입장 시 불러올 이전 대화 (최근 100건) */
 	@Transactional(readOnly = true)
 	public List<ChatMessageResponseDto> getMessages(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		return chatMapper.selectMessagesByRoomId(room.getRoomId());
+		return chatMapper.findMessageList(room.getRoomId());
 	}
 
 	private void validateRequired(String roomUuid, Long participantId) {
