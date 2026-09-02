@@ -1,5 +1,7 @@
 package com.kh.midpoint.participant.model.dao;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
@@ -15,5 +17,7 @@ public interface ParticipantMapper {
 	void deleteParticipant(Long participantId);
 
 	void updateNextHost(Long roomId);
+	
+	List<ParticipantResponseDto> findAllParticipants(Long roomId);
 
 }
