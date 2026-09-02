@@ -7,52 +7,98 @@
 			SELECT SEQ_PARTICIPANT.NEXTVAL FROM DUAL
 		</selectKey>
 
-		INSERT INTO PARTICIPANT (
-			participant_id,
-			room_id,
-			nickname,
-			is_host,
-			pref_lat,
-			pref_lng,
-			joined_at
-		) VALUES (
-			#{participantId},
-			#{roomId},
-			#{nickname},
-			CASE WHEN NOT EXISTS (
-				SELECT 1 FROM PARTICIPANT WHERE room_id = #{roomId}
-			) THEN 'Y' ELSE 'N' END,
-			#{prefLat},
-			#{prefLng},
-			SYSDATE
-		)
+		INSERT 
+		  INTO 
+		       PARTICIPANT (
+							 participant_id
+						   , room_id
+						   , nickname
+						   , is_host
+						   , pref_lat
+						   , pref_lng
+						   , joined_at
+						   )
+		VALUES (
+				 #{participantId}
+			   , #{roomId}
+			   , #{nickname}
+			   , CASE 
+				 WHEN 
+				  NOT EXISTS (
+							   SELECT 
+							   		  1 
+							     FROM 
+							     	  PARTICIPANT
+							    WHERE 
+							    	  room_id = #{roomId}
+							 )
+				 THEN 
+				 	  'Y'
+				 ELSE 
+				 	  'N'
+				  END
+			   , #{prefLat}
+			   , #{prefLng}
+			   , SYSDATE
+			   )
 	</insert>
 
 	<select id="findParticipant" parameterType="long" resultType="ParticipantResponseDto">
-		SELECT
-			participant_id,
-			room_id,
-			nickname,
-			is_host,
-			is_ready,
-			pref_lat,
-			pref_lng,
-			joined_at,
-			left_at
-		FROM PARTICIPANT
-		WHERE participant_id = #{participantId}
+		SELECT 
+			   participant_id
+			 , room_id
+			 , nickname
+			 , is_host
+			 , is_ready
+			 , pref_lat
+			 , pref_lng
+			 , joined_at
+			 , left_at
+		  FROM 
+			   PARTICIPANT
+		 WHERE 
+		 	   participant_id = #{participantId}
 	</select>
 
 	<delete id="deleteParticipant" parameterType="long">
-		DELETE FROM PARTICIPANT WHERE participant_id = #{participantId}
+		DELETE 
+		  FROM 
+		       PARTICIPANT
+		 WHERE 
+		 	   participant_id = #{participantId}
 	</delete>
 
 	<update id="updateNextHost" parameterType="long">
-		UPDATE PARTICIPANT
-		   SET is_host = 'Y'
-		 WHERE participant_id = (
-		 	SELECT MIN(participant_id) FROM PARTICIPANT WHERE room_id = #{roomId}
-		 )
+		UPDATE 
+			   PARTICIPANT
+		   SET 
+		   	   is_host = 'Y'
+		 WHERE 
+		 	   participant_id = (
+		 						  SELECT 
+		 						  		 MIN(participant_id)
+		 						    FROM 
+		 						    	 PARTICIPANT 
+		 						   WHERE 
+		 								 room_id = #{roomId}
+		 						)
 	</update>
-
+	
+	<select id="findAllParticipants" resultType="ParticipantResponseDto">
+		SELECT 
+			   PARTICIPANT_ID
+			 , ROOM_ID
+			 , NICKNAME
+			 , IS_HOST
+			 , IS_READY
+			 , PREF_LAT
+			 , PREF_LNG
+			 , JOINED_AT
+			 , LEFT_AT
+		  FROM 
+		  	   PARTICIPANT
+		 WHERE 
+		 	   ROOM_ID = #{roomId}
+	</select>
+	
 </mapper>

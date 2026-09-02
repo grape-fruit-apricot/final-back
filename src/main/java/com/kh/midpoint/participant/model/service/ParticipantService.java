@@ -1,6 +1,7 @@
 package com.kh.midpoint.participant.model.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -57,6 +58,14 @@ public class ParticipantService {
 
 	private boolean isHost(ParticipantResponseDto participant) {
 		return "Y".equals(participant.getIsHost());
+	}
+
+	public List<ParticipantResponseDto> findAllParticipants(String roomUuid) {
+		RoomResponseDto room = roomService.findRoom(roomUuid);
+		
+		List<ParticipantResponseDto> participants = participantMapper.findAllParticipants(room.getRoomId());
+		
+		return participants;
 	}
 
 }
