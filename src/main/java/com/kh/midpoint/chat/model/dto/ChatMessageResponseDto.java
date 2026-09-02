@@ -10,12 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-/**
- * 서버 -> 프론트 (STOMP 브로드캐스트 · 이전 대화 조회)
- *
- * 닉네임은 PARTICIPANT 와 LEFT JOIN 해서 채운다.
- * 이미 나간 참가자는 행이 삭제되어 있으므로 '알 수 없음' 이 들어온다.
- */
 @Getter
 @Setter
 @NoArgsConstructor
