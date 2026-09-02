@@ -2,6 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.chat.model.dao.ChatMapper">
 
+	<!--
+		이미 나간 참가자는 PARTICIPANT 행이 삭제되어 있으므로 LEFT JOIN 으로 조회한다.
+		INNER JOIN 을 쓰면 그 사람 메시지가 결과에서 통째로 빠진다.
+	-->
+	<sql id="messageColumns">
+		       M.MESSAGE_ID
+		     , M.PARTICIPANT_ID
+		     , NVL(P.NICKNAME, '알 수 없음') AS NICKNAME
+		     , M.CONTENT
+		     , M.MSG_TYPE
+		     , M.CREATED_AT
+	</sql>
+
 	<select id="selectNicknameByRoomIdAndParticipantId" resultType="java.lang.String">
 		SELECT
 			   NICKNAME
@@ -10,6 +23,53 @@
 		 WHERE
 		 	   ROOM_ID = #{roomId}
 		   AND PARTICIPANT_ID = #{participantId}
+	</select>
+
+	<insert id="insertMessage" parameterType="ChatMessage">
+		<selectKey keyProperty="messageId" resultType="long" order="BEFORE">
+			SELECT SEQ_CHAT_MESSAGE.NEXTVAL FROM DUAL
+		</selectKey>
+
+		INSERT INTO CHAT_MESSAGE (
+			   MESSAGE_ID
+			 , ROOM_ID
+			 , PARTICIPANT_ID
+			 , CONTENT
+			 , MSG_TYPE
+			 , CREATED_AT
+		) VALUES (
+			   #{messageId}
+			 , #{roomId}
+			 , #{participantId}
+			 , #{content}
+			 , #{msgType}
+			 , SYSTIMESTAMP
+		)
+	</insert>
+
+	<select id="selectMessageByMessageId" resultType="ChatMessageResponseDto">
+		SELECT
+		<include refid="messageColumns" />
+		  FROM
+		  	   CHAT_MESSAGE M
+		  LEFT JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
+		 WHERE
+		 	   M.MESSAGE_ID = #{messageId}
+	</select>
+
+	<!-- 최근 100건을 가져온 뒤 오래된 순으로 되돌린다 -->
+	<select id="selectMessagesByRoomId" resultType="ChatMessageResponseDto">
+		SELECT * FROM (
+			SELECT
+			<include refid="messageColumns" />
+			  FROM
+			  	   CHAT_MESSAGE M
+			  LEFT JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
+			 WHERE
+			 	   M.ROOM_ID = #{roomId}
+			 ORDER BY M.MESSAGE_ID DESC
+			 FETCH FIRST 100 ROWS ONLY
+		) ORDER BY MESSAGE_ID
 	</select>
 
 </mapper>
