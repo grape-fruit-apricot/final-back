@@ -3,8 +3,10 @@ package com.kh.midpoint.point.model.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.external.kakao.KakaoLocalClient;
 import com.kh.midpoint.external.kakao.NearbyStationDto;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
@@ -14,49 +16,40 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MidPointFinder {
-
-	private static final int CANDIDATE_STATION_COUNT = 3;
-    private static final String CENTER_CANDIDATE_NAME = "중심점";
-
     private final KakaoLocalClient kakaoLocalClient;
     private final WalkMidPointService walkMidPointService;
+    
+    @Value("${candidate.count}")
+    private int stationCount;
+    
+    @Value("${candidate.name}")
+    private String centerName;
 
-    public NearbyStationDto findMidPoint(
-            List<ParticipantResponseDto> participants
-    ) {
-
+    public NearbyStationDto findMidPoint(List<ParticipantResponseDto> participants) {
+    	validParticipant(participants);
+    	
         double centroidLat = participants.stream()
-                .mapToDouble(ParticipantResponseDto::getPrefLat)
-                .average()
-                .orElseThrow();
+                						 .mapToDouble(ParticipantResponseDto::getPrefLat)
+                						 .average()
+                						 .orElseThrow(() -> new NotFoundException("참여자 위치 정보가 없습니다."));
 
         double centroidLng = participants.stream()
-                .mapToDouble(ParticipantResponseDto::getPrefLng)
-                .average()
-                .orElseThrow();
+                						 .mapToDouble(ParticipantResponseDto::getPrefLng)
+                						 .average()
+                						 .orElseThrow(() -> new NotFoundException("참여자 위치 정보가 없습니다."));
 
-        List<NearbyStationDto> stations =
-                kakaoLocalClient.findNearbySubwayStations(
-                        centroidLng,
-                        centroidLat,
-                        CANDIDATE_STATION_COUNT
-                );
+        List<NearbyStationDto> stations = kakaoLocalClient.findNearbySubwayStations(centroidLng, centroidLat, stationCount);
 
-        List<NearbyStationDto> candidates =
-                new ArrayList<>(stations);
+        List<NearbyStationDto> candidates = new ArrayList<>(stations);
+        candidates.add(new NearbyStationDto(centerName, centroidLat, centroidLng));
 
-        candidates.add(
-                new NearbyStationDto(
-                        CENTER_CANDIDATE_NAME,
-                        centroidLat,
-                        centroidLng
-                )
-        );
-
-        return walkMidPointService.pickBest(
-                participants,
-                candidates
-        );
+        return walkMidPointService.pickBest(participants, candidates);
+    }
+    
+    private void validParticipant(List<ParticipantResponseDto> participants) {
+    	if (participants == null || participants.isEmpty()) {
+            throw new NotFoundException("참여자가 없습니다.");
+        }
     }
 
 }

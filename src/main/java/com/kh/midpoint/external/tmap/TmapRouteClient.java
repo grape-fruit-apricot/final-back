@@ -18,10 +18,17 @@ import java.util.Map;
 @Component
 public class TmapRouteClient {
 
-	private static final String START_NAME = "출발";
-	private static final String END_NAME = "도착";
-	private static final double TOO_NEAR_METERS = 110.0;
-	private static final double EARTH_RADIUS_METERS = 6371000;
+	@Value("${route.start}")
+	private String startName = "출발";
+	
+	@Value("${route.start}")
+	private String endName = "도착";
+	
+	@Value("${route.near}")
+	private double nearMeter = 110.0;
+	
+	@Value("${route.radius}")
+	private double earthRadiusMeter = 6371000;
 
 	private final RestClient restClient;
 	private final String appKey;
@@ -33,33 +40,33 @@ public class TmapRouteClient {
 
 	@Cacheable(cacheNames = "route-pedestrian", key = "#startX + ',' + #startY + ',' + #endX + ',' + #endY")
 	public TmapRouteDto getPedestrianRoute(double startX, double startY, double endX, double endY) {
-		if (distanceMeters(startY, startX, endY, endX) < TOO_NEAR_METERS) {
+		if (distanceMeters(startY, startX, endY, endX) < nearMeter) {
 			return new TmapRouteDto(0, List.of(new RoutePointDto(startY, startX)));
 		}
 
 		JsonNode response;
 		try {
 			response = restClient.post()
-					.uri(uriBuilder -> uriBuilder
-							.scheme("https")
-							.host("apis.openapi.sk.com")
-							.path("/tmap/routes/pedestrian")
-							.queryParam("version", "1")
-							.build())
-					.header("appKey", appKey)
-					.contentType(MediaType.APPLICATION_JSON)
-					.body(Map.of(
-							"startX", String.valueOf(startX),
-							"startY", String.valueOf(startY),
-							"endX", String.valueOf(endX),
-							"endY", String.valueOf(endY),
-							"startName", START_NAME,
-							"endName", END_NAME,
-							"reqCoordType", "WGS84GEO",
-							"resCoordType", "WGS84GEO"
-					))
-					.retrieve()
-					.body(JsonNode.class);
+								 .uri(uriBuilder -> uriBuilder
+										 				.scheme("https")
+										 				.host("apis.openapi.sk.com")
+										 				.path("/tmap/routes/pedestrian")
+										 				.queryParam("version", "1")
+										 				.build())
+								 .header("appKey", appKey)
+								 .contentType(MediaType.APPLICATION_JSON)
+								 .body(Map.of(
+										 	   "startX", String.valueOf(startX),
+										 	   "startY", String.valueOf(startY),
+										 	   "endX", String.valueOf(endX),
+										 	   "endY", String.valueOf(endY),
+										 	   "startName", startName,
+										 	   "endName", endName,
+										 	   "reqCoordType", "WGS84GEO",
+										 	   "resCoordType", "WGS84GEO"
+										))
+								 .retrieve()
+								 .body(JsonNode.class);
 		} catch (RestClientResponseException e) {
 			throw new ExternalApiException("Tmap 요청 실패(status=" + e.getStatusCode().value() + ")");
 		} catch (RestClientException e) {
@@ -76,7 +83,7 @@ public class TmapRouteClient {
 				+ Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
 				* Math.sin(dLng / 2) * Math.sin(dLng / 2);
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		return EARTH_RADIUS_METERS * c;
+		return earthRadiusMeter * c;
 	}
 
 	private TmapRouteDto parseRoute(JsonNode response) {

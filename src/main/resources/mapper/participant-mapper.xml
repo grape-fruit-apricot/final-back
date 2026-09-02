@@ -10,13 +10,13 @@
 		INSERT 
 		  INTO 
 		       PARTICIPANT (
-							 participant_id
-						   , room_id
-						   , nickname
-						   , is_host
-						   , pref_lat
-						   , pref_lng
-						   , joined_at
+							 PARTICIPANT_ID
+						   , ROOM_ID
+						   , NICKNAME
+						   , IS_HOST
+						   , PREF_LAT
+						   , PREF_LNG
+						   , JOINED_AT
 						   )
 		VALUES (
 				 #{participantId}
@@ -30,7 +30,7 @@
 							     FROM 
 							     	  PARTICIPANT
 							    WHERE 
-							    	  room_id = #{roomId}
+							    	  ROOM_ID = #{roomId}
 							 )
 				 THEN 
 				 	  'Y'
@@ -45,19 +45,19 @@
 
 	<select id="findParticipant" parameterType="long" resultType="ParticipantResponseDto">
 		SELECT 
-			   participant_id
-			 , room_id
-			 , nickname
-			 , is_host
-			 , is_ready
-			 , pref_lat
-			 , pref_lng
-			 , joined_at
-			 , left_at
+			   PARTICIPANT_ID
+			 , ROOM_ID
+			 , NICKNAME
+			 , IS_HOST
+			 , IS_READY
+			 , PREF_LAT
+			 , PREF_LNG
+			 , JOINED_AT
+			 , LEFT_AT
 		  FROM 
 			   PARTICIPANT
 		 WHERE 
-		 	   participant_id = #{participantId}
+		 	   PARTICIPANT_ID = #{participantId}
 	</select>
 
 	<delete id="deleteParticipant" parameterType="long">
@@ -65,22 +65,22 @@
 		  FROM 
 		       PARTICIPANT
 		 WHERE 
-		 	   participant_id = #{participantId}
+		 	   PARTICIPANT_ID = #{participantId}
 	</delete>
 
 	<update id="updateNextHost" parameterType="long">
 		UPDATE 
 			   PARTICIPANT
 		   SET 
-		   	   is_host = 'Y'
+		   	   IS_HOST = 'Y'
 		 WHERE 
-		 	   participant_id = (
+		 	   PARTICIPANT_ID = (
 		 						  SELECT 
-		 						  		 MIN(participant_id)
+		 						  		 MIN(PARTICIPANT_ID)
 		 						    FROM 
 		 						    	 PARTICIPANT 
 		 						   WHERE 
-		 								 room_id = #{roomId}
+		 								 ROOM_ID = #{roomId}
 		 						)
 	</update>
 	

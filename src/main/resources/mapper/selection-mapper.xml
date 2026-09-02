@@ -3,22 +3,49 @@
 <mapper namespace="com.kh.midpoint.selection.model.dao.SelectionMapper">
 
 	<select id="findSelection" parameterType="long" resultType="SelectionResponseDto">
-		SELECT
-			participant_id,
-			restaurant_id
-		FROM SELECTION
-		WHERE participant_id = #{participantId}
+		SELECT 
+			   PARTICIPANT_ID,
+			   RESTAURANT_ID
+		  FROM 
+		  	   SELECTION
+		 WHERE 
+		 	   PARTICIPANT_ID = #{participantId}
 	</select>
 
 	<update id="upsertSelection" parameterType="Selection">
-		MERGE INTO SELECTION s
-		USING (SELECT #{participantId} AS participant_id, #{restaurantId} AS restaurant_id FROM dual) src
-		ON (s.participant_id = src.participant_id)
-		WHEN MATCHED THEN
-			UPDATE SET s.restaurant_id = src.restaurant_id
-		WHEN NOT MATCHED THEN
-			INSERT (selection_id, participant_id, restaurant_id)
-			VALUES (SEQ_SELECTION.NEXTVAL, src.participant_id, src.restaurant_id)
+		MERGE 
+		 INTO 
+		 	  SELECTION s
+		USING (
+				SELECT 
+					   #{participantId} AS PARTICIPANT_ID
+					 , #{restaurantId} AS RESTAURANT_ID
+				  FROM 
+				 	   DUAL
+			   ) src
+		   ON 
+		   	  s.PARTICIPANT_ID = src.PARTICIPANT_ID
+		 WHEN 
+		 	  MATCHED 
+		 	     THEN
+					  UPDATE 
+					  	 SET 
+					  	 	 s.RESTAURANT_ID = src.RESTAURANT_ID
+		 WHEN 
+		  NOT MATCHED 
+		 		 THEN
+					  INSERT 
+					  		 (
+							   SELECTION_ID
+							 , PARTICIPANT_ID
+							 , RESTAURANT_ID
+							 )
+			VALUES 
+				   (
+					 SEQ_SELECTION.NEXTVAL
+				   , src.PARTICIPANT_ID
+				   , src.RESTAURANT_ID
+				   )
 	</update>
 
 </mapper>

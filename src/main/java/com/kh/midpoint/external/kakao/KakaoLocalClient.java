@@ -13,15 +13,20 @@ import tools.jackson.databind.JsonNode;
 @Component
 public class KakaoLocalClient {
 
-	private static final String CATEGORY_SEARCH_URL = "https://dapi.kakao.com/v2/local/search/category.json";
-	private static final String SUBWAY_CATEGORY_GROUP_CODE = "SW8";
-	private static final int SUBWAY_SEARCH_RADIUS_METERS = 10000;
-
 	private final RestClient categoryClient;
+	
+	@Value("${search.category.url}")
+	private String categoryUrl;
 
+	@Value("${search.category.subway.code}")
+	private String subwayCode;
+
+	@Value("${search.category.subway.radius}")
+	private String subwayRadius;
+	
 	public KakaoLocalClient(@Value("${kakao.rest-api-key}") String kakaoRestApiKey) {
 		this.categoryClient = RestClient.builder()
-				.baseUrl(CATEGORY_SEARCH_URL)
+				.baseUrl(categoryUrl)
 				.defaultHeader("Authorization", "KakaoAK " + kakaoRestApiKey)
 				.build();
 	}
@@ -30,10 +35,10 @@ public class KakaoLocalClient {
 	public List<NearbyStationDto> findNearbySubwayStations(double x, double y, int count) {
 		JsonNode response = categoryClient.get()
 				.uri(uriBuilder -> uriBuilder
-						.queryParam("category_group_code", SUBWAY_CATEGORY_GROUP_CODE)
+						.queryParam("category_group_code", subwayCode)
 						.queryParam("x", x)
 						.queryParam("y", y)
-						.queryParam("radius", SUBWAY_SEARCH_RADIUS_METERS)
+						.queryParam("radius", subwayRadius)
 						.queryParam("sort", "distance")
 						.queryParam("size", count)
 						.build())
