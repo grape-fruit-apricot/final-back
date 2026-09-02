@@ -11,6 +11,6 @@ public class ChatMessage {
 	Long roomId;
 	Long participantId;
 	String content;
-	String msgType;
+	MsgType msgType;
 
 }

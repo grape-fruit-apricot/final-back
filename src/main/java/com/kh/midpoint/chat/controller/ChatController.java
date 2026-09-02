@@ -58,7 +58,7 @@ public class ChatController {
 		broadcast(session, MsgType.LEAVE, session.nickname() + "님이 퇴장하셨습니다.");
 	}
 
-	private void broadcast(ChatSession session, String msgType, String content) {
+	private void broadcast(ChatSession session, MsgType msgType, String content) {
 		ChatMessageResponseDto saved = chatService.saveMessage(session, msgType, content);
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid(), saved);
 	}

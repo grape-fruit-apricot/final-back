@@ -9,6 +9,7 @@ import com.kh.midpoint.chat.model.dao.ChatMapper;
 import com.kh.midpoint.chat.model.dto.ChatMessageResponseDto;
 import com.kh.midpoint.chat.model.vo.ChatMessage;
 import com.kh.midpoint.chat.model.vo.ChatSession;
+import com.kh.midpoint.chat.model.vo.MsgType;
 import com.kh.midpoint.common.exception.ForbiddenException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.room.model.dto.RoomResponseDto;
@@ -38,7 +39,7 @@ public class ChatService {
 	}
 
 	@Transactional
-	public ChatMessageResponseDto saveMessage(ChatSession session, String msgType, String content) {
+	public ChatMessageResponseDto saveMessage(ChatSession session, MsgType msgType, String content) {
 		ChatMessage message = ChatMessage.builder()
 				.roomId(session.roomId())
 				.participantId(session.participantId())
