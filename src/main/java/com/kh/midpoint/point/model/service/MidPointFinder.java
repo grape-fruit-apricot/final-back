@@ -21,10 +21,7 @@ public class MidPointFinder {
     private final KakaoLocalClient kakaoLocalClient;
     private final WalkMidPointService walkMidPointService;
 
-    public NearbyStationDto findMidPoint(
-            List<ParticipantResponseDto> participants
-    ) {
-
+    public NearbyStationDto findMidPoint(List<ParticipantResponseDto> participants) {
         double centroidLat = participants.stream()
                 .mapToDouble(ParticipantResponseDto::getPrefLat)
                 .average()
