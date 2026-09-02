@@ -18,8 +18,6 @@ public class ChatService {
 
 	private final ChatMapper chatMapper;
 	private final RoomService roomService;
-
-	/** 방과 참가자를 확인하고 접속 정보를 만든다. 검증에 실패하면 예외를 던져 연결을 거부한다. */
 	@Transactional(readOnly = true)
 	public ChatSession openSession(String roomUuid, Long participantId) {
 		validateRequired(roomUuid, participantId);
