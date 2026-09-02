@@ -1,12 +1,23 @@
 package com.kh.midpoint.chat.model.dao;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import com.kh.midpoint.chat.model.dto.ChatMessageResponseDto;
+import com.kh.midpoint.chat.model.vo.ChatMessage;
 
 @Mapper
 public interface ChatMapper {
 
-	String selectNicknameByRoomIdAndParticipantId(@Param("roomId") Long roomId,
+	String findNicknameByRoomIdAndParticipantId(@Param("roomId") Long roomId,
 			@Param("participantId") Long participantId);
+
+	void insertMessage(ChatMessage message);
+
+	ChatMessageResponseDto findMessage(Long messageId);
+
+	List<ChatMessageResponseDto> findMessageList(Long roomId);
 
 }
