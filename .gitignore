@@ -39,6 +39,7 @@ build/
 !**/src/test/**/build/
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.yml
 *.war
 .gradle/
