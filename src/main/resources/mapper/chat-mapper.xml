@@ -22,7 +22,8 @@
 		  	   PARTICIPANT
 		 WHERE
 		 	   ROOM_ID = #{roomId}
-		   AND PARTICIPANT_ID = #{participantId}
+		   AND 
+		   	   PARTICIPANT_ID = #{participantId}
 	</select>
 
 	<insert id="insertMessage" parameterType="ChatMessage">
