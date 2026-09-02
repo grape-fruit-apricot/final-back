@@ -34,4 +34,9 @@ public class SelectionService {
 		return selectionMapper.findSelection(participantId);
 	}
 
+	@Transactional(readOnly = true)
+	public SelectionResponseDto findSelection(Long participantId) {
+		return selectionMapper.findSelection(participantId);
+	}
+
 }
