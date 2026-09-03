@@ -20,35 +20,36 @@ import java.util.Map;
 @Component
 public class TmapRouteClient {
 
-	// 타임아웃을 지정하지 않으면 무제한이라, Tmap 이 응답하지 않을 때 호출한 쪽이 그대로 묶인다.
-	// 참가자 수만큼 순차 호출하는 경로가 있어 한 번의 대기가 전체 지연으로 이어진다.
-	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
-	private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
-
-	// 필드 초기값은 기본값 역할을 하지 못한다. 스프링이 주입하면서 덮어쓰고, 키가 없으면
-	// 초기값이 쓰이는 게 아니라 기동이 실패한다. 저장소에 yml 이 없으므로(.gitignore 의 *.yml)
-	// 원래 의도했던 값을 플레이스홀더 기본값으로 옮겨 적는다. yml 로 덮어쓰는 건 그대로 된다.
-	@Value("${route.start:출발}")
+	// 상수는 전부 application-constant.yml 에 있다. 여기에 기본값을 적지 않는 이유는
+	// 출처를 한 곳으로 유지하기 위해서다(키가 빠지면 어떤 키인지 알려주며 기동이 실패한다).
+	@Value("${route.start}")
 	private String startName;
 
-	@Value("${route.end:도착}")
+	@Value("${route.end}")
 	private String endName;
 
-	@Value("${route.near:110.0}")
+	@Value("${route.near}")
 	private double nearMeter;
 
-	@Value("${route.radius:6371000}")
+	@Value("${route.radius}")
 	private double earthRadiusMeter;
 
 	private final RestClient restClient;
 	private final String appKey;
+	private final String routeUrl;
 
-	public TmapRouteClient(@Value("${tmap.app-key}") String appKey) {
+	// 타임아웃과 URL 은 생성자에서 RestClient 를 만들 때 필요하다. 필드 주입은 생성자 이후라
+	// 늦으므로 생성자 파라미터로 받는다.
+	public TmapRouteClient(@Value("${tmap.app-key}") String appKey,
+			@Value("${route.url}") String routeUrl,
+			@Value("${external.timeout.connect}") long connectTimeoutMillis,
+			@Value("${external.timeout.read}") long readTimeoutMillis) {
 		this.appKey = appKey;
+		this.routeUrl = routeUrl;
 
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-		requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
-		requestFactory.setReadTimeout(READ_TIMEOUT);
+		requestFactory.setConnectTimeout(Duration.ofMillis(connectTimeoutMillis));
+		requestFactory.setReadTimeout(Duration.ofMillis(readTimeoutMillis));
 
 		this.restClient = RestClient.builder()
 				.requestFactory(requestFactory)
@@ -64,12 +65,7 @@ public class TmapRouteClient {
 		JsonNode response;
 		try {
 			response = restClient.post()
-								 .uri(uriBuilder -> uriBuilder
-										 				.scheme("https")
-										 				.host("apis.openapi.sk.com")
-										 				.path("/tmap/routes/pedestrian")
-										 				.queryParam("version", "1")
-										 				.build())
+								 .uri(routeUrl)
 								 .header("appKey", appKey)
 								 .contentType(MediaType.APPLICATION_JSON)
 								 .body(Map.of(

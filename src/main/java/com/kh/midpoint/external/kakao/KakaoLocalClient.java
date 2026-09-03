@@ -20,10 +20,6 @@ import tools.jackson.databind.JsonNode;
 @Component
 public class KakaoLocalClient {
 
-	// 타임아웃을 지정하지 않으면 무제한이라, 카카오가 응답하지 않을 때 호출한 쪽이 그대로 묶인다.
-	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
-	private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
-
 	@Value("${search.category.subway.code}")
 	private String subwayCode;
 
@@ -41,11 +37,14 @@ public class KakaoLocalClient {
 
 	private final RestClient categoryClient;
 
+	// 타임아웃은 생성자에서 RestClient 를 만들 때 필요해 필드 주입이 아니라 파라미터로 받는다.
 	public KakaoLocalClient(@Value("${kakao.rest-api-key}") String kakaoRestApiKey,
-							@Value("${search.category.url}") String categoryUrl) {
+							@Value("${search.category.url}") String categoryUrl,
+							@Value("${external.timeout.connect}") long connectTimeoutMillis,
+							@Value("${external.timeout.read}") long readTimeoutMillis) {
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-		requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
-		requestFactory.setReadTimeout(READ_TIMEOUT);
+		requestFactory.setConnectTimeout(Duration.ofMillis(connectTimeoutMillis));
+		requestFactory.setReadTimeout(Duration.ofMillis(readTimeoutMillis));
 
 		this.categoryClient = RestClient.builder()
 				.baseUrl(categoryUrl)
