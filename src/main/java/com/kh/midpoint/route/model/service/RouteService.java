@@ -57,6 +57,20 @@ public class RouteService {
 		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId()));
 	}
 
+	// 이미 확정된 결과를 다시 계산하지 않고 읽기만 한다. 새로고침이나 뒤늦은 입장에서
+	// findRoute 를 다시 부르면 경로를 중복 저장하려다 UK_PART_ROUTE_PART 에 걸릴 수 있다.
+	@Transactional(readOnly = true)
+	public RouteResponseDto findRouteResult(String roomUuid) {
+		RoomResponseDto room = roomService.findRoom(roomUuid);
+
+		RestaurantResponseDto restaurant = roomResultService.findRoomResult(room.getRoomId());
+		if (restaurant == null) {
+			throw new NotFoundException("아직 확정된 결과가 없습니다.");
+		}
+
+		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId()));
+	}
+
 	private RestaurantResponseDto findRestaurant(String roomUuid, Long roomId,
 			List<ParticipantResponseDto> participants) {
 		RestaurantResponseDto restaurant = roomResultService.findRoomResult(roomId);
@@ -79,11 +93,12 @@ public class RouteService {
 
 	private List<Long> findSelectedRestaurantIdList(
 			List<ParticipantResponseDto> participants) {
+		// 중복을 제거하지 않는다. 선택한 참가자 수만큼 후보에 들어가야
+		// 식당이 아니라 사람 기준으로 확률이 같아진다(3명이 고른 식당이 3배 확률).
 		List<Long> restaurantIds = participants.stream()
 				.map(participant -> selectionService.findSelection(participant.getParticipantId()))
 				.filter(Objects::nonNull)
 				.map(SelectionResponseDto::getRestaurantId)
-				.distinct()
 				.toList();
 
 		validateSelectedRestaurantIdList(restaurantIds);
