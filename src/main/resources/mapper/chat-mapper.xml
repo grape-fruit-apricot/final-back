@@ -52,10 +52,6 @@
 		 	   M.MESSAGE_ID = #{messageId}
 	</select>
 
-	<!--
-		afterMessageId 가 없으면 최근 100건 (방 입장 시),
-		있으면 그 이후에 쌓인 메시지만 (재연결 시).
-	-->
 	<select id="findMessageList" resultType="ChatMessageResponseDto">
 		SELECT
 			   *

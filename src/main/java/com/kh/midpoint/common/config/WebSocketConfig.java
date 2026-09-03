@@ -34,13 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	/** heartbeat 주고받는 간격(ms). 이 시간 동안 신호가 없으면 끊긴 연결로 본다. */
 	private static final long HEARTBEAT_INTERVAL = 10_000L;
 
-	/**
-	 * heartbeat 를 보낼 스케줄러.
-	 * 스프링이 만드는 messageBrokerTaskScheduler 를 주입받으면 순환 참조가 되므로 직접 만든다.
-	 */
 	private final ThreadPoolTaskScheduler heartbeatScheduler = createHeartbeatScheduler();
 
 	private final ChatService chatService;
