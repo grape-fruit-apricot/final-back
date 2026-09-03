@@ -1,6 +1,5 @@
 package com.kh.midpoint.point.controller;
 
-import java.util.Map;
 
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -28,8 +27,9 @@ public class MidPointController {
 
 	@MessageMapping("/midpoint/find")
 	public void findMidpoint(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = findSession(accessor);
+		ChatSession session = ChatSession.from(accessor);
 		if (session == null) {
+			log.warn("검증되지 않은 연결이라 중간지점 찾기 요청을 무시합니다.");
 			return;
 		}
 
@@ -52,7 +52,7 @@ public class MidPointController {
 
 	@MessageExceptionHandler
 	public void handleFindMidpointException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = findSession(accessor);
+		ChatSession session = ChatSession.from(accessor);
 		if (session == null) {
 			return;
 		}
@@ -64,20 +64,5 @@ public class MidPointController {
 				new SocketErrorResponseDto(message));
 	}
 
-	private ChatSession findSession(SimpMessageHeaderAccessor accessor) {
-		Map<String, Object> attributes = accessor.getSessionAttributes();
-		if (attributes == null) {
-			log.warn("세션 attribute 가 없어 요청을 무시합니다.");
-			return null;
-		}
-
-		Object value = attributes.get(ChatSession.ATTR_KEY);
-		if (value == null) {
-			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
-			return null;
-		}
-
-		return (ChatSession) value;
-	}
 
 }
