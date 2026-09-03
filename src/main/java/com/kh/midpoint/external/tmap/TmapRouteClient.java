@@ -6,17 +6,24 @@ import tools.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class TmapRouteClient {
+
+	// 타임아웃을 지정하지 않으면 무제한이라, Tmap 이 응답하지 않을 때 호출한 쪽이 그대로 묶인다.
+	// 참가자 수만큼 순차 호출하는 경로가 있어 한 번의 대기가 전체 지연으로 이어진다.
+	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+	private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
 
 	@Value("${route.start}")
 	private String startName = "출발";
@@ -35,7 +42,14 @@ public class TmapRouteClient {
 
 	public TmapRouteClient(@Value("${tmap.app-key}") String appKey) {
 		this.appKey = appKey;
-		this.restClient = RestClient.builder().build();
+
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+		requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+		requestFactory.setReadTimeout(READ_TIMEOUT);
+
+		this.restClient = RestClient.builder()
+				.requestFactory(requestFactory)
+				.build();
 	}
 
 	@Cacheable(cacheNames = "route-pedestrian", key = "#startX + ',' + #startY + ',' + #endX + ',' + #endY")

@@ -51,6 +51,26 @@
 		END;
 	</insert>
 
+	<select id="findRestaurant" parameterType="long" resultType="RestaurantResponseDto">
+		SELECT
+			   r.RESTAURANT_ID
+			 , r.NAME
+			 , r.SOURCE
+			 , r.ADDRESS
+			 , r.LAT
+			 , r.LNG
+			 , r.ADDED_BY
+			 , r.CREATED_AT
+			 , r.CATEGORY
+			 , r.ROAD_ADDRESS
+			 , r.PHONE
+			 , r.PLACE_URL
+		  FROM
+			   RESTAURANT r
+		 WHERE
+			   r.RESTAURANT_ID = #{restaurantId}
+	</select>
+
 	<select id="findRestaurantList" resultType="RestaurantResponseDto">
 		SELECT
 			   r.RESTAURANT_ID

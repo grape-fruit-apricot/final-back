@@ -13,4 +13,6 @@ public interface RestaurantMapper {
 
 	List<RestaurantResponseDto> findRestaurantList(String roomUuid);
 
+	RestaurantResponseDto findRestaurant(Long restaurantId);
+
 }

@@ -2,6 +2,7 @@ package com.kh.midpoint.restaurant.model.service;
 
 import com.kh.midpoint.common.exception.DuplicateException;
 import com.kh.midpoint.common.exception.InvalidStateException;
+import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.external.kakao.KakaoLocalClient;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 import com.kh.midpoint.restaurant.model.dao.RestaurantMapper;
@@ -62,7 +63,8 @@ public class RestaurantService {
 
 	// 중간지점이 확정된 직후, 그 좌표 주변 식당을 카카오에서 받아 방의 식당 목록으로 저장한다.
 	// 좌표를 인자로 받는 이유는 호출 시점에 이미 알고 있는 값을 다시 조회하지 않기 위해서다.
-	@Transactional
+	// 첫 줄이 카카오 호출이라 @Transactional 을 붙이면 응답을 기다리는 내내 DB 커넥션을 잡는다.
+	// 저장은 매퍼 한 번이라 트랜잭션 없이도 원자적이다.
 	public void insertNearbyRestaurantList(String roomUuid, Double lat, Double lng) {
 		List<KakaoRestaurantResponseDto> nearbyList = kakaoLocalClient.findNearbyRestaurantList(lat, lng);
 		if (nearbyList.isEmpty()) {
@@ -107,6 +109,16 @@ public class RestaurantService {
 	}
 
 	@Transactional(readOnly = true)
+	public RestaurantResponseDto findRestaurant(Long restaurantId) {
+		RestaurantResponseDto restaurant = restaurantMapper.findRestaurant(restaurantId);
+		if (restaurant == null) {
+			throw new NotFoundException("존재하지 않는 식당입니다: " + restaurantId);
+		}
+		return restaurant;
+	}
+
+	// DB 접근은 방 존재 확인 한 번뿐인데 카카오 응답을 기다린다. 트랜잭션으로 묶으면
+	// 그 대기 시간만큼 커넥션을 점유하므로 붙이지 않는다.
 	public List<KakaoRestaurantResponseDto> findNearbyRestaurantList(String roomUuid, Double lat, Double lng) {
 		roomService.findRoom(roomUuid);
 		return kakaoLocalClient.findNearbyRestaurantList(lat, lng);
