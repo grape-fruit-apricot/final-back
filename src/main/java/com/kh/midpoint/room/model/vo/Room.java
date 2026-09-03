@@ -9,8 +9,13 @@ import java.util.UUID;
 @Builder
 public class Room {
 
+	Long roomId;
 	String roomUuid;
 	Integer maxParticipants;
+	Double midpointLat;
+	Double midpointLng;
+	String midpointSource;
+	String stage;
 
 	public static Room create(Integer maxParticipants) {
 		return Room.builder()

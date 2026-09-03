@@ -3,6 +3,7 @@ package com.kh.midpoint.room.model.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.room.model.dao.RoomMapper;
 import com.kh.midpoint.room.model.dto.RoomCreateRequestDto;
@@ -33,6 +34,30 @@ public class RoomService {
 			throw new NotFoundException("존재하지 않는 방입니다: " + roomUuid);
 		}
 		return responseDto;
+	}
+
+	@Transactional
+	public void updateStage(Long roomId, String stage) {
+		validateStage(stage);
+		Room room = Room.builder().roomId(roomId).stage(stage).build();
+		int updatedRows = roomMapper.updateStage(room);
+		validateUpdatedRoom(updatedRows);
+	}
+
+	private void validateStage(String stage) {
+		if (!"WAITING".equals(stage)
+				&& !"MODE_SELECTED".equals(stage)
+				&& !"MIDPOINT_FOUND".equals(stage)
+				&& !"RESOLVING".equals(stage)
+				&& !"RESOLVED".equals(stage)) {
+			throw new InvalidStateException("올바르지 않은 방 상태입니다: " + stage);
+		}
+	}
+
+	private void validateUpdatedRoom(int updatedRows) {
+		if (updatedRows == 0) {
+			throw new NotFoundException("상태를 수정할 방을 찾을 수 없습니다.");
+		}
 	}
 
 }
