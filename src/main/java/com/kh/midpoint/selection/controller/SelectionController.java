@@ -28,8 +28,8 @@ public class SelectionController {
 
 	@PostMapping("/participants/{participantId}/selection")
 	public ResponseEntity<ApiResponse<SelectionResponseDto>> selectRestaurant(
-			@PathVariable String roomUuid,
-			@PathVariable Long participantId,
+			@PathVariable("roomUuid") String roomUuid,
+			@PathVariable("participantId") Long participantId,
 			@Valid @RequestBody SelectionRequestDto requestDto) {
 		SelectionResponseDto responseDto = selectionService.selectRestaurant(roomUuid, participantId, requestDto);
 

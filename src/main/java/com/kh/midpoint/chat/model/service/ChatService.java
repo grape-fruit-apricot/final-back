@@ -53,9 +53,9 @@ public class ChatService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<ChatMessageResponseDto> getMessages(String roomUuid) {
+	public List<ChatMessageResponseDto> findMessageList(String roomUuid, Long afterMessageId) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		return chatMapper.findMessageList(room.getRoomId());
+		return chatMapper.findMessageList(room.getRoomId(), afterMessageId);
 	}
 
 	private void validateRequired(String roomUuid, Long participantId) {

@@ -69,6 +69,9 @@
 				  LEFT JOIN PARTICIPANT P ON P.PARTICIPANT_ID = M.PARTICIPANT_ID
 				 WHERE 
 				 	   M.ROOM_ID = #{roomId}
+				<if test="afterMessageId != null">
+				   AND M.MESSAGE_ID &gt; #{afterMessageId}
+				</if>
 				 ORDER BY M.MESSAGE_ID DESC
 				 FETCH FIRST 100 ROWS ONLY
 		  	   )

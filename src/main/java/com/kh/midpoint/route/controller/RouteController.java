@@ -20,7 +20,7 @@ public class RouteController {
 	private final RouteService routeService;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<RouteResponseDto>> findRoute(@PathVariable String roomUuid) {
+	public ResponseEntity<ApiResponse<RouteResponseDto>> findRoute(@PathVariable("roomUuid") String roomUuid) {
 		RouteResponseDto responseDto = routeService.findRoute(roomUuid);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.created("참가자별 도보 경로를 조회했습니다.", responseDto));
