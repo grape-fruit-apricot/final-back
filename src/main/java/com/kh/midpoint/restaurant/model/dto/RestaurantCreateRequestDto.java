@@ -18,11 +18,25 @@ public class RestaurantCreateRequestDto {
 	@NotNull
 	private Long participantId;
 
+	@NotNull
+	private Long kakaoPlaceId;
+
 	@NotBlank
 	private String name;
 
 	@NotBlank
+	private String category;
+
+	@NotBlank
 	private String address;
+
+	@NotBlank
+	private String roadAddress;
+
+	private String phone;
+
+	@NotBlank
+	private String placeUrl;
 
 	@NotNull
 	private Double lat;

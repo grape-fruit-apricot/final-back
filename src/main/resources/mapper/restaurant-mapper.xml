@@ -2,41 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.restaurant.model.dao.RestaurantMapper">
 
-	<insert id="insertRestaurant" parameterType="Restaurant">
-		INSERT 
-		  INTO 
-		  	   RESTAURANT (
-							RESTAURANT_ID
-						  , ROOM_ID
-						  , NAME
-						  , SOURCE
-						  , ADDRESS
-						  , LAT
-						  , LNG
-						  , ADDED_BY
-						  , CREATED_AT
-						  )
-		VALUES 
-			   (
-				 SEQ_RESTAURANT.NEXTVAL
-			   , (
-				   SELECT 
-				  		  ROOM_ID
-				  	 FROM 
-				  		  ROOM
-				    WHERE 
-				   		  ROOM_UUID = #{roomUuid}
-				 )
-			   , #{name}
-			   , 'MANUAL'
-			   , #{address}
-			   , #{lat}
-			   , #{lng}
-			   , #{participantId}
-			   , SYSDATE
-			   )
-	</insert>
-
 	<insert id="insertRestaurantList">
 		BEGIN
 		<foreach collection="list" item="item">
