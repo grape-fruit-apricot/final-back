@@ -44,8 +44,10 @@
 				  FROM 
 				 	   DUAL
 			   ) src
-		   ON 
-		   	  (s.PARTICIPANT_ID = src.PARTICIPANT_ID)
+		   ON
+		   	  (
+		   	    s.PARTICIPANT_ID = src.PARTICIPANT_ID
+		   	  )
 		 WHEN 
 		 	  MATCHED 
 		 	     THEN

@@ -9,8 +9,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
+import com.kh.midpoint.common.response.SocketErrorResponseDto;
 import com.kh.midpoint.external.kakao.NearbyStationDto;
-import com.kh.midpoint.point.model.dto.MidPointErrorResponseDto;
 import com.kh.midpoint.point.model.service.MidPointService;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
 
@@ -61,7 +61,7 @@ public class MidPointController {
 
 		String message = e.getMessage() == null ? "중간지점을 찾지 못했습니다." : e.getMessage();
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/midpoint/error",
-				new MidPointErrorResponseDto(message));
+				new SocketErrorResponseDto(message));
 	}
 
 	private ChatSession findSession(SimpMessageHeaderAccessor accessor) {
