@@ -55,7 +55,7 @@
 			 , EXPIRES_AT
 		  FROM 
 		  	   ROOM
-		 WHERE 
+		 WHERE
 		 	   ROOM_UUID = #{roomUuid}
 	</select>
 

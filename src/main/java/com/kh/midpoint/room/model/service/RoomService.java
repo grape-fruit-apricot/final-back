@@ -37,6 +37,18 @@ public class RoomService {
 	}
 
 	@Transactional
+	public void updateMidpoint(Long roomId, Double lat, Double lng, String source) {
+		Room room = Room.builder()
+				.roomId(roomId)
+				.midpointLat(lat)
+				.midpointLng(lng)
+				.midpointSource(source)
+				.build();
+		int updatedRows = roomMapper.updateMidpoint(room);
+		validateUpdatedRoom(updatedRows);
+	}
+
+	@Transactional
 	public void updateStage(Long roomId, String stage) {
 		validateStage(stage);
 		Room room = Room.builder().roomId(roomId).stage(stage).build();
@@ -56,7 +68,7 @@ public class RoomService {
 
 	private void validateUpdatedRoom(int updatedRows) {
 		if (updatedRows == 0) {
-			throw new NotFoundException("상태를 수정할 방을 찾을 수 없습니다.");
+			throw new NotFoundException("수정할 방을 찾을 수 없습니다.");
 		}
 	}
 

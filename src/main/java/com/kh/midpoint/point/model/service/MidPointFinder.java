@@ -46,6 +46,10 @@ public class MidPointFinder {
         return walkMidPointService.pickBest(participants, candidates);
     }
     
+    public String getCenterName() {
+        return centerName;
+    }
+
     private void validParticipant(List<ParticipantResponseDto> participants) {
     	if (participants == null || participants.isEmpty()) {
             throw new NotFoundException("참여자가 없습니다.");
