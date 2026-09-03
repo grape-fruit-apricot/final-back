@@ -30,6 +30,10 @@
 			 , R.LNG
 			 , R.ADDED_BY
 			 , R.CREATED_AT
+			 , R.CATEGORY
+			 , R.ROAD_ADDRESS
+			 , R.PHONE
+			 , R.PLACE_URL
 		  FROM
 			   ROOM_RESULT RR
 		  JOIN

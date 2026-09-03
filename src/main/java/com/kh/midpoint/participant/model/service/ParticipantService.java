@@ -72,6 +72,12 @@ public class ParticipantService {
 		}
 	}
 
+	// 클라이언트가 보낸 participantId 가 정말 그 방의 참가자인지 확인한다.
+	// 이게 없으면 A방 uuid 와 B방 participantId 를 섞어 남의 방 참가자 이름으로 요청할 수 있다.
+	public void validateParticipant(String roomUuid, Long participantId) {
+		findParticipantInRoom(roomUuid, participantId);
+	}
+
 	private ParticipantResponseDto findParticipantInRoom(String roomUuid, Long participantId) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 

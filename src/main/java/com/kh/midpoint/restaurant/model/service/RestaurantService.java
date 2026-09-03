@@ -3,6 +3,7 @@ package com.kh.midpoint.restaurant.model.service;
 import com.kh.midpoint.common.exception.DuplicateException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.external.kakao.KakaoLocalClient;
+import com.kh.midpoint.participant.model.service.ParticipantService;
 import com.kh.midpoint.restaurant.model.dao.RestaurantMapper;
 import com.kh.midpoint.restaurant.model.dto.KakaoRestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.dto.RestaurantCreateRequestDto;
@@ -23,6 +24,7 @@ public class RestaurantService {
 
 	private final RestaurantMapper restaurantMapper;
 	private final RoomService roomService;
+	private final ParticipantService participantService;
 	private final KakaoLocalClient kakaoLocalClient;
 
 	@Transactional
@@ -31,6 +33,8 @@ public class RestaurantService {
 		if (!"MIDPOINT_FOUND".equals(room.getStage())) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 등록할 수 있습니다.");
 		}
+
+		participantService.validateParticipant(roomUuid, requestDto.getParticipantId());
 
 		Restaurant restaurant = Restaurant.builder()
 			.roomUuid(roomUuid)
