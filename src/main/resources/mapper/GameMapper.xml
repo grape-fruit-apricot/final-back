@@ -2,13 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.game.model.dao.GameMapper">
    
-    <select id="findGame" resultMap="gameMap">
-        SELECT R.ROOM_ID AS GAME_ID, R.ROOM_UUID AS GAME_UUID, R.CREATED_AT,
-               (SELECT TO_CHAR(P.PARTICIPANT_ID) FROM PARTICIPANT P
+      <select id="findGame" resultMap="gameMap">
+        SELECT R.ROOM_ID, R.ROOM_UUID, R.CREATED_AT,
+               (SELECT P.PARTICIPANT_ID FROM PARTICIPANT P
                 WHERE P.ROOM_ID = R.ROOM_ID AND P.IS_HOST = 'Y' AND P.LEFT_AT IS NULL
-                FETCH FIRST 1 ROW ONLY) AS HOST_PLAYER_ID
+                FETCH FIRST 1 ROW ONLY) AS HOST_PARTICIPANT_ID
         FROM ROOM R
-        WHERE R.ROOM_ID = #{gameId}
+        WHERE R.ROOM_UUID = #{roomUuid}
     </select>
 
 
