@@ -6,6 +6,7 @@ import java.util.Map;
 
 import jakarta.annotation.PreDestroy;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -34,7 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	private static final long HEARTBEAT_INTERVAL = 10_000L;
+	@Value("${chat.heartbeat-interval}")
+	private long heartbeatInterval;
 
 	private final ThreadPoolTaskScheduler heartbeatScheduler = createHeartbeatScheduler();
 
@@ -50,7 +52,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
 		registry.enableSimpleBroker("/topic")
-				.setHeartbeatValue(new long[] { HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL })
+				.setHeartbeatValue(new long[] { heartbeatInterval, heartbeatInterval })
 				.setTaskScheduler(heartbeatScheduler);
 		registry.setApplicationDestinationPrefixes("/app");
 	}
