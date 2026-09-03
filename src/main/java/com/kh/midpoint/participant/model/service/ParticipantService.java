@@ -52,6 +52,19 @@ public class ParticipantService {
 		}
 	}
 
+	// 게임 시작 전 준비 완료 표시. 피그마상 준비를 해제하는 동작은 없어 'Y' 로만 바꾼다.
+	@Transactional
+	public void updateReady(String roomUuid, Long participantId) {
+		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
+
+		Participant updated = Participant.builder()
+				.participantId(participant.getParticipantId())
+				.isReady("Y")
+				.build();
+
+		participantMapper.updateReady(updated);
+	}
+
 	public void validateHost(String roomUuid, Long participantId) {
 		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
 		if (!isHost(participant)) {

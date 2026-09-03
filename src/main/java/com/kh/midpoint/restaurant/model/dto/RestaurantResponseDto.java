@@ -18,7 +18,11 @@ public class RestaurantResponseDto {
 	private Long restaurantId;
 	private String name;
 	private String source;
+	private String category;
 	private String address;
+	private String roadAddress;
+	private String phone;
+	private String placeUrl;
 	private Double lat;
 	private Double lng;
 	private Long addedBy;

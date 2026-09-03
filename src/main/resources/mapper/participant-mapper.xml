@@ -84,6 +84,15 @@
 		 						)
 	</update>
 	
+	<update id="updateReady" parameterType="Participant">
+		UPDATE
+			   PARTICIPANT
+		   SET
+		   	   IS_READY = #{isReady}
+		 WHERE
+		 	   PARTICIPANT_ID = #{participantId}
+	</update>
+
 	<select id="findAllParticipants" resultType="ParticipantResponseDto">
 		SELECT 
 			   PARTICIPANT_ID

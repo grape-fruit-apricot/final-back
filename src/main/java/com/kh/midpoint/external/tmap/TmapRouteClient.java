@@ -21,7 +21,7 @@ public class TmapRouteClient {
 	@Value("${route.start}")
 	private String startName = "출발";
 	
-	@Value("${route.start}")
+	@Value("${route.end}")
 	private String endName = "도착";
 	
 	@Value("${route.near}")

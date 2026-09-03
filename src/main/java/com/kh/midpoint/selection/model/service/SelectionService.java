@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class SelectionService {
@@ -37,6 +39,12 @@ public class SelectionService {
 	@Transactional(readOnly = true)
 	public SelectionResponseDto findSelection(Long participantId) {
 		return selectionMapper.findSelection(participantId);
+	}
+
+	@Transactional(readOnly = true)
+	public List<SelectionResponseDto> findSelectionList(String roomUuid) {
+		roomService.findRoom(roomUuid);
+		return selectionMapper.findSelectionList(roomUuid);
 	}
 
 }

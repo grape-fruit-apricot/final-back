@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,6 +41,19 @@ public class ParticipantController {
 	public ResponseEntity<ApiResponse<List<ParticipantResponseDto>>> findAllParticipantList(@PathVariable("roomUuid") String roomUuid) {
 		List<ParticipantResponseDto> responseDto = participantService.findAllParticipants(roomUuid);
 		return ResponseEntity.ok(ApiResponse.ok("참가자 목록 조회에 성공했습니다.", responseDto));
+	}
+
+	@PatchMapping("/{participantId}/ready")
+	public ResponseEntity<ApiResponse<Void>> updateReady(@PathVariable("roomUuid") String roomUuid, @PathVariable("participantId") Long participantId) {
+		participantService.updateReady(roomUuid, participantId);
+
+		// 준비 현황은 방 전체가 함께 보는 정보라 갱신된 참가자 목록을 통째로 브로드캐스트한다.
+		// 입장 토픽은 새 참가자 1명만 보내므로 목록 전체를 보내는 별도 토픽을 쓴다.
+		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/participants/ready",
+				participantService.findAllParticipants(roomUuid));
+
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiResponse.created("준비 상태가 변경되었습니다.", null));
 	}
 
 	@DeleteMapping("/{participantId}")

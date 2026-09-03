@@ -7,7 +7,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
+import com.kh.midpoint.common.exception.ExternalApiException;
 import com.kh.midpoint.restaurant.model.dto.KakaoRestaurantResponseDto;
 
 import tools.jackson.databind.JsonNode;
@@ -19,7 +22,7 @@ public class KakaoLocalClient {
 	private String subwayCode;
 
 	@Value("${search.category.subway.radius}")
-	private String subwayRadius;
+	private int subwayRadius;
 
 	@Value("${search.category.restaurant.code}")
 	private String restaurantCode;
@@ -42,19 +45,32 @@ public class KakaoLocalClient {
 
 	@Cacheable(cacheNames = "restaurants-nearby", key = "#lat + ',' + #lng")
 	public List<KakaoRestaurantResponseDto> findNearbyRestaurantList(Double lat, Double lng) {
-		JsonNode response = categoryClient.get()
-				.uri(uriBuilder -> uriBuilder
-						.queryParam("category_group_code", restaurantCode)
-						.queryParam("x", lng)
-						.queryParam("y", lat)
-						.queryParam("radius", restaurantRadius)
-						.queryParam("sort", "accuracy")
-						.queryParam("size", restaurantResultSize)
-						.build())
-				.retrieve()
-				.body(JsonNode.class);
+		JsonNode response = searchCategory(restaurantCode, lng, lat, restaurantRadius, "accuracy", restaurantResultSize);
 
 		return toRestaurantResponseList(response);
+	}
+
+	// 두 검색이 같은 카테고리 API 를 같은 파라미터 형태로 호출하므로 요청과 예외 변환을 한 곳에 모은다.
+	// 외부 API 실패를 그대로 흘려보내면 500 이 나가므로 ExternalApiException(502) 으로 바꾼다.
+	private JsonNode searchCategory(String categoryCode, double x, double y, int radius, String sort, int size) {
+		try {
+			return categoryClient.get()
+					.uri(uriBuilder -> uriBuilder
+							.queryParam("category_group_code", categoryCode)
+							.queryParam("x", x)
+							.queryParam("y", y)
+							.queryParam("radius", radius)
+							.queryParam("sort", sort)
+							.queryParam("size", size)
+							.build())
+					.retrieve()
+					.body(JsonNode.class);
+
+		} catch (RestClientResponseException e) {
+			throw new ExternalApiException("카카오 요청 실패(status=" + e.getStatusCode().value() + ")");
+		} catch (RestClientException e) {
+			throw new ExternalApiException("카카오 요청 실패: " + e.getMessage());
+		}
 	}
 
 	private List<KakaoRestaurantResponseDto> toRestaurantResponseList(JsonNode response) {
@@ -83,17 +99,7 @@ public class KakaoLocalClient {
 	
 	@Cacheable(cacheNames = "stations-nearby", key = "#x + ',' + #y + ',' + #count")
 	public List<NearbyStationDto> findNearbySubwayStations(double x, double y, int count) {
-		JsonNode response = categoryClient.get()
-				.uri(uriBuilder -> uriBuilder
-						.queryParam("category_group_code", subwayCode)
-						.queryParam("x", x)
-						.queryParam("y", y)
-						.queryParam("radius", subwayRadius)
-						.queryParam("sort", "distance")
-						.queryParam("size", count)
-						.build())
-				.retrieve()
-				.body(JsonNode.class);
+		JsonNode response = searchCategory(subwayCode, x, y, subwayRadius, "distance", count);
 
 		List<NearbyStationDto> stations = new ArrayList<>();
 		if (response == null) {

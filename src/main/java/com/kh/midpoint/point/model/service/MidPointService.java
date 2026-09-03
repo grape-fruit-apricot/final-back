@@ -27,9 +27,7 @@ public class MidPointService {
 		participantService.validateHost(roomUuid, participantId);
 
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		if (!"WAITING".equals(room.getStage())) {
-			throw new InvalidStateException("이미 중간지점을 찾은 방입니다.");
-		}
+		validateMidpointNotFound(room);
 
 		List<ParticipantResponseDto> participants = participantService.findAllParticipants(roomUuid);
 
@@ -40,6 +38,14 @@ public class MidPointService {
 		roomService.updateStage(room.getRoomId(), "MIDPOINT_FOUND");
 
 		return midpoint;
+	}
+
+	// stage 값을 열거하는 대신 좌표 유무로 판단한다. 좌표와 stage 는 같은 트랜잭션에서
+	// 함께 갱신되므로 결과가 같고, 이후 MODE_SELECTED 같은 단계가 생겨도 영향을 받지 않는다.
+	private void validateMidpointNotFound(RoomResponseDto room) {
+		if (room.getMidpointLat() != null) {
+			throw new InvalidStateException("이미 중간지점을 찾은 방입니다.");
+		}
 	}
 
 }
