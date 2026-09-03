@@ -14,17 +14,12 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class GameResponse {
-
+public class GameStateResponseDto {
     private String roomUuid;
     private Long participantId;
     private Long hostId;
     private boolean host;
-    private List<PlayerResponse> players;
+    private List<GameParticipantResponseDto> players;
     private Map<String, Object> gameState;
     private long version;
-    private boolean allReady;
-    private long hostDelegationSeconds;
-    private boolean forceStartEligible;
-    private long forceStartSeconds;
 }

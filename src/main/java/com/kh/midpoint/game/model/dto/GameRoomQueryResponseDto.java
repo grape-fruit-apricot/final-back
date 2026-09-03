@@ -10,15 +10,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/** 게임방 내부 조회 결과 */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class GameDto {
+public class GameRoomQueryResponseDto {
     private Long roomId;
     private String roomUuid;
     private Long hostParticipantId;
     private LocalDateTime createdAt;
-    private List<GamePlayerDto> players = new ArrayList<>();
+    private List<GameParticipantQueryResponseDto> players = new ArrayList<>();
 }

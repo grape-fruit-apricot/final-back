@@ -11,11 +11,9 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class PlayerResponse {
-
+public class GameParticipantResponseDto {
     private Long participantId;
     private String name;
     private boolean host;
     private boolean active;
-    private boolean ready;
 }

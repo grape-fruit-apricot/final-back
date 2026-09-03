@@ -2,7 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.game.model.dao.GameMapper">
    
-      <select id="findGame" resultMap="gameMap">
+   <resultMap id="gameRoomMap" type="com.kh.midpoint.game.model.dto.GameRoomQueryResponseDto">
+        <id property="roomId" column="ROOM_ID"/>
+        <result property="roomUuid" column="ROOM_UUID"/>
+        <result property="hostParticipantId" column="HOST_PARTICIPANT_ID"/>
+        <result property="createdAt" column="CREATED_AT"/>
+    </resultMap>
+
+    <resultMap id="participantMap" type="com.kh.midpoint.game.model.dto.GameParticipantQueryResponseDto">
+        <id property="participantId" column="PARTICIPANT_ID"/>
+        <result property="playerName" column="PLAYER_NAME"/>
+        <result property="playerStatus" column="PLAYER_STATUS"/>
+    </resultMap>
+
+      <select id="findGameState" resultMap="gameMap">
         SELECT R.ROOM_ID, R.ROOM_UUID, R.CREATED_AT,
                (SELECT P.PARTICIPANT_ID FROM PARTICIPANT P
                 WHERE P.ROOM_ID = R.ROOM_ID AND P.IS_HOST = 'Y' AND P.LEFT_AT IS NULL

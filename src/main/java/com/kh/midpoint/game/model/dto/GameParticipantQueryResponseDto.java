@@ -6,13 +6,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-/** 게임방 참가자 조회 결과다. */
+/** 게임방 참가자 조회 결과 */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class GamePlayerDto {
+public class GameParticipantQueryResponseDto {
     private Long participantId;
     private String playerName;
     private String playerStatus;

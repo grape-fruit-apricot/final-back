@@ -1,5 +1,7 @@
 package com.kh.midpoint.game.model.vo;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Value;
 
@@ -7,6 +9,9 @@ import lombok.Value;
 @Value
 @Builder
 public class GameParticipant {
-    Long participantId;
-    String winner;
+	 Long gameParticipantId;
+	 Long participantId;
+	 String isWinner;
+	 LocalDateTime joinedAt;
+	 LocalDateTime leftAt;
 }
