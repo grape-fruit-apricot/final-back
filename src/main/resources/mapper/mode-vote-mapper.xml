@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.vote.model.dao.ModeVoteMapper">
+
+	<!-- 참가자당 1표(UK_MODE_VOTE_PART)라, 다시 투표하면 기존 표를 갈아끼운다.
+		 Oracle 은 MERGE 의 ON 절에 괄호가 필요하다. -->
+	<update id="insertModeVote" parameterType="ModeVote">
+		MERGE
+		 INTO
+			  MODE_VOTE mv
+		USING (
+				SELECT
+					   #{participantId} AS PARTICIPANT_ID
+					 , #{voteMode} AS VOTE_MODE
+				  FROM
+					   DUAL
+			  ) src
+		   ON
+			  (
+				mv.PARTICIPANT_ID = src.PARTICIPANT_ID
+			  )
+		 WHEN
+			  MATCHED
+				 THEN
+					  UPDATE
+						 SET
+							 mv.VOTE_MODE = src.VOTE_MODE
+		 WHEN
+		  NOT MATCHED
+				 THEN
+					  INSERT
+							 (
+							   VOTE_ID
+							 , PARTICIPANT_ID
+							 , VOTE_MODE
+							 )
+		VALUES
+			   (
+				 SEQ_MODE_VOTE.NEXTVAL
+			   , src.PARTICIPANT_ID
+			   , src.VOTE_MODE
+			   )
+	</update>
+
+	<select id="findModeVoteList" resultType="ModeVoteResponseDto">
+		SELECT
+			   mv.PARTICIPANT_ID
+			 , mv.VOTE_MODE
+		  FROM
+			   MODE_VOTE mv
+		  JOIN
+			   PARTICIPANT p
+			ON
+			   p.PARTICIPANT_ID = mv.PARTICIPANT_ID
+		  JOIN
+			   ROOM r
+			ON
+			   r.ROOM_ID = p.ROOM_ID
+		 WHERE
+			   r.ROOM_UUID = #{roomUuid}
+		 ORDER
+			BY
+			   mv.PARTICIPANT_ID
+	</select>
+
+	<!-- 방장이 투표를 다시 시작할 때 이전 표를 지운다. -->
+	<delete id="deleteModeVoteList" parameterType="string">
+		DELETE
+		  FROM
+			   MODE_VOTE
+		 WHERE
+			   PARTICIPANT_ID IN (
+									SELECT
+										   p.PARTICIPANT_ID
+									  FROM
+										   PARTICIPANT p
+									  JOIN
+										   ROOM r
+										ON
+										   r.ROOM_ID = p.ROOM_ID
+									 WHERE
+										   r.ROOM_UUID = #{roomUuid}
+								 )
+	</delete>
+
+</mapper>
