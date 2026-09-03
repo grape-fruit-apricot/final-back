@@ -16,16 +16,16 @@ public class GameService {
 	private final GameParticipantService gameParticipantService;
 	
 	@Transactional(noRollbackFor = NotFoundException.class)
-    public GameResponse findGame(Long gameId, Long playerId) {
-        Game game = validateMember(findRequiredGame(gameId), playerId);
+	public GameResponse findGame(Long gameId, Long participantId) {
+		Game game = validateMember(findRequiredGame(gameId), participantId);
         runtimeStore.expireTurnIfNeeded(gameId);
         delegateTimedOutHostIfNeeded(game);
         gameParticipantService.insertFinishedGame(gameId, game.getPlayers(), runtimeStore.get(gameId));
         delegateHostIfNeeded(game);
-        return response(game, playerId);
-    }
+		return response(game, participantId);
+	}
 
-	private GameResponse response(Game game, Long playerId) {
+	private GameResponse response(Game game, Long participantId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -40,7 +40,7 @@ public class GameService {
 		
 	}
 
-	private Game validateMember(Object requiredGame, Long playerId) {
+	private Game validateMember(Object requiredGame, Long participantId) {
 		// TODO Auto-generated method stub
 		return null;
 	}

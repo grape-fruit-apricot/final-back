@@ -23,8 +23,8 @@ public class GameController {
 	
 	@GetMapping("/{gameId}")
     public ResponseEntity<ApiResponse<GameResponse>> findGame(
-            @PathVariable Long gameId, @RequestParam Long playerId) {
+            @PathVariable Long gameId, @RequestParam Long participantId) {
         return ResponseEntity.ok(ApiResponse.ok("게임 조회에 성공했습니다.",
-                gameService.findGame(gameId, playerId)));
+                gameService.findGame(gameId, participantId)));
     }
 }

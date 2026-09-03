@@ -15,7 +15,7 @@ import java.util.List;
 public class Game {
     private Long gameId;
     private String gameUuid;
-    private String hostPlayerId;
+    private Long hostParticipantId;
     private LocalDateTime createdAt;
     private List<GamePlayer> players = new ArrayList<>();
 }

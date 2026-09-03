@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class GamePlayer {
     private Long participantId;
-    private String playerId;
     private Long gameId;
     private String playerName;
     private int playerOrder;
