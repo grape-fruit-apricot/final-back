@@ -17,6 +17,8 @@ public interface ParticipantMapper {
 	void deleteParticipant(Long participantId);
 
 	void updateNextHost(Long roomId);
+
+	int updateReady(Participant participant);
 	
 	List<ParticipantResponseDto> findAllParticipants(Long roomId);
 
