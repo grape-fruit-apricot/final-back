@@ -33,7 +33,7 @@
 			   s.PARTICIPANT_ID
 	</select>
 
-	<update id="upsertSelection" parameterType="Selection">
+	<update id="insertSelection" parameterType="Selection">
 		MERGE 
 		 INTO 
 		 	  SELECTION s

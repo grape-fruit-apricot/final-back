@@ -13,6 +13,6 @@ public interface SelectionMapper {
 
 	List<SelectionResponseDto> findSelectionList(String roomUuid);
 
-	void upsertSelection(Selection selection);
+	void insertSelection(Selection selection);
 
 }

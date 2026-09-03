@@ -87,7 +87,7 @@ public class TmapRouteClient {
 	}
 
 	private TmapRouteDto parseRoute(JsonNode response) {
-		validApi(response);
+		validateApi(response);
 		
 		int totalTimeSeconds = 0;
 		List<RoutePointDto> points = new ArrayList<>();
@@ -110,13 +110,13 @@ public class TmapRouteClient {
 			}
 		}
 
-		validPoints(points);
+		validatePoints(points);
 
 		int timeMinutes = (int) Math.ceil(totalTimeSeconds / 60.0);
 		return new TmapRouteDto(timeMinutes, points);
 	}
 	
-	private void validApi(JsonNode response) {
+	private void validateApi(JsonNode response) {
 		if (response == null) {
 			throw new ExternalApiException("Tmap 응답을 받지 못했습니다.");
 		}
@@ -127,7 +127,7 @@ public class TmapRouteClient {
 		}
 	}
 	
-	private void validPoints(List<RoutePointDto> points) {
+	private void validatePoints(List<RoutePointDto> points) {
 		if (points.isEmpty()) {
 			throw new NotFoundException("도보 경로 좌표를 받지 못했습니다.");
 		}

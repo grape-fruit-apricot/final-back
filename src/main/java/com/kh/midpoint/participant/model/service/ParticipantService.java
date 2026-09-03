@@ -4,17 +4,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.kh.midpoint.common.exception.ForbiddenException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.participant.model.dao.ParticipantMapper;
-import com.kh.midpoint.participant.model.dto.JoinRoomRequest;
+import com.kh.midpoint.participant.model.dto.JoinRoomRequestDto;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
 import com.kh.midpoint.participant.model.vo.Participant;
 import com.kh.midpoint.room.model.dto.RoomResponseDto;
 import com.kh.midpoint.room.model.service.RoomService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,7 +25,7 @@ public class ParticipantService {
 	private final RoomService roomService;
 	
 	@Transactional
-	public ParticipantResponseDto join(String roomUuid, JoinRoomRequest request) {
+	public ParticipantResponseDto insertParticipant(String roomUuid, JoinRoomRequestDto request) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 
 		Participant participant = Participant.builder()
@@ -65,6 +65,7 @@ public class ParticipantService {
 		participantMapper.updateReady(updated);
 	}
 
+	@Transactional(readOnly = true)
 	public void validateHost(String roomUuid, Long participantId) {
 		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
 		if (!isHost(participant)) {
@@ -74,6 +75,7 @@ public class ParticipantService {
 
 	// 클라이언트가 보낸 participantId 가 정말 그 방의 참가자인지 확인한다.
 	// 이게 없으면 A방 uuid 와 B방 participantId 를 섞어 남의 방 참가자 이름으로 요청할 수 있다.
+	@Transactional(readOnly = true)
 	public void validateParticipant(String roomUuid, Long participantId) {
 		findParticipantInRoom(roomUuid, participantId);
 	}
@@ -92,12 +94,11 @@ public class ParticipantService {
 		return "Y".equals(participant.getIsHost());
 	}
 
-	public List<ParticipantResponseDto> findAllParticipants(String roomUuid) {
+	@Transactional(readOnly = true)
+	public List<ParticipantResponseDto> findParticipantList(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		
-		List<ParticipantResponseDto> participants = participantMapper.findAllParticipants(room.getRoomId());
-		
-		return participants;
+
+		return participantMapper.findParticipantList(room.getRoomId());
 	}
 
 }

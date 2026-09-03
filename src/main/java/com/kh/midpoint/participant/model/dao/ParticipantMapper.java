@@ -20,6 +20,6 @@ public interface ParticipantMapper {
 
 	int updateReady(Participant participant);
 	
-	List<ParticipantResponseDto> findAllParticipants(Long roomId);
+	List<ParticipantResponseDto> findParticipantList(Long roomId);
 
 }

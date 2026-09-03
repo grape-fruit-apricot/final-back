@@ -27,11 +27,11 @@ public class SelectionController {
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@PostMapping("/participants/{participantId}/selection")
-	public ResponseEntity<ApiResponse<SelectionResponseDto>> selectRestaurant(
+	public ResponseEntity<ApiResponse<SelectionResponseDto>> insertSelection(
 			@PathVariable String roomUuid,
 			@PathVariable Long participantId,
 			@Valid @RequestBody SelectionRequestDto requestDto) {
-		SelectionResponseDto responseDto = selectionService.selectRestaurant(roomUuid, participantId, requestDto);
+		SelectionResponseDto responseDto = selectionService.insertSelection(roomUuid, participantId, requestDto);
 
 		// 선택은 방 전체가 함께 보는 정보라, 갱신된 현황을 통째로 브로드캐스트한다.
 		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/selections",

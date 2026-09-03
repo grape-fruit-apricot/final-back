@@ -26,7 +26,7 @@ public class MidPointFinder {
 	private String centerName;
 
 	public NearbyStationDto findMidPoint(List<ParticipantResponseDto> participants) {
-		validParticipant(participants);
+		validateParticipantList(participants);
 
 		double centroidLat = participants.stream()
 				.mapToDouble(ParticipantResponseDto::getPrefLat)
@@ -50,7 +50,7 @@ public class MidPointFinder {
 		return centerName;
 	}
 
-	private void validParticipant(List<ParticipantResponseDto> participants) {
+	private void validateParticipantList(List<ParticipantResponseDto> participants) {
 		if (participants == null || participants.isEmpty()) {
 			throw new NotFoundException("참여자가 없습니다.");
 		}

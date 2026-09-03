@@ -48,7 +48,7 @@ public class RouteService {
 	@Transactional
 	public RouteResponseDto findRoute(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		List<ParticipantResponseDto> participants = participantService.findAllParticipants(roomUuid);
+		List<ParticipantResponseDto> participants = participantService.findParticipantList(roomUuid);
 		RestaurantResponseDto restaurant = findRestaurant(roomUuid, room.getRoomId(), participants);
 
 		insertMissingRouteList(room.getRoomId(), participants, restaurant);

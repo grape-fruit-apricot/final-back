@@ -93,7 +93,7 @@
 		 	   PARTICIPANT_ID = #{participantId}
 	</update>
 
-	<select id="findAllParticipants" resultType="ParticipantResponseDto">
+	<select id="findParticipantList" resultType="ParticipantResponseDto">
 		SELECT 
 			   PARTICIPANT_ID
 			 , ROOM_ID

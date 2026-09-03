@@ -29,7 +29,7 @@ public class MidPointService {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 		validateMidpointNotFound(room);
 
-		List<ParticipantResponseDto> participants = participantService.findAllParticipants(roomUuid);
+		List<ParticipantResponseDto> participants = participantService.findParticipantList(roomUuid);
 
 		NearbyStationDto midpoint = midpointFinder.findMidPoint(participants);
 
