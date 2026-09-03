@@ -36,10 +36,10 @@ public class MidPointService {
 		NearbyStationDto midpoint = midpointFinder.findMidPoint(participants);
 
 		String source = midpoint.getName().equals(midpointFinder.getCenterName()) ? "FALLBACK" : "KAKAO";
-		roomService.updateMidpoint(roomUuid, midpoint.getLat(), midpoint.getLng(), source);
+		roomService.updateMidpoint(room.getRoomId(), midpoint.getLat(), midpoint.getLng(), source);
+		roomService.updateStage(room.getRoomId(), "MIDPOINT_FOUND");
 
 		return midpoint;
 	}
 
 }
-

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.roomresult.model.dao.RoomResultMapper">
+
+	<insert id="insertRoomResult" parameterType="RoomResult">
+		INSERT
+		  INTO
+			   ROOM_RESULT (
+							 RESULT_ID
+						   , ROOM_ID
+						   , RESTAURANT_ID
+						   , GAME_PARTICIPANT_ID
+						   )
+		VALUES
+			   (
+				 SEQ_ROOM_RESULT.NEXTVAL
+			   , #{roomId}
+			   , #{restaurantId}
+			   , NULL
+			   )
+	</insert>
+
+	<select id="findRoomResult" parameterType="long" resultType="RestaurantResponseDto">
+		SELECT
+			   R.RESTAURANT_ID
+			 , R.NAME
+			 , R.SOURCE
+			 , R.ADDRESS
+			 , R.LAT
+			 , R.LNG
+			 , R.ADDED_BY
+			 , R.CREATED_AT
+		  FROM
+			   ROOM_RESULT RR
+		  JOIN
+			   RESTAURANT R
+			ON
+			   R.RESTAURANT_ID = RR.RESTAURANT_ID
+		 WHERE
+			   RR.ROOM_ID = #{roomId}
+	</select>
+
+</mapper>

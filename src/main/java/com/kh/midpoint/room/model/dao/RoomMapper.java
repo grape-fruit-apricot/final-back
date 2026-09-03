@@ -9,8 +9,10 @@ public interface RoomMapper {
 
 	void insertRoom(Room room);
 
-	RoomResponseDto findRoom(String roomUuid);
+	int updateMidpoint(Room room);
 
-	void updateMidpoint(Room room);
+	int updateStage(Room room);
+
+	RoomResponseDto findRoom(String roomUuid);
 
 }

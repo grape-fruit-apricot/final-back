@@ -15,6 +15,7 @@ public class Room {
 	Double midpointLat;
 	Double midpointLng;
 	String midpointSource;
+	String stage;
 
 	public static Room create(Integer maxParticipants) {
 		return Room.builder()
