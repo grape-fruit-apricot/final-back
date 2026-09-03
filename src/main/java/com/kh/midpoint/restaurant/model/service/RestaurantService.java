@@ -41,6 +41,39 @@ public class RestaurantService {
 		restaurantMapper.insertRestaurant(restaurant);
 	}
 
+	// 중간지점이 확정된 직후, 그 좌표 주변 식당을 카카오에서 받아 방의 식당 목록으로 저장한다.
+	// 좌표를 인자로 받는 이유는 호출 시점에 이미 알고 있는 값을 다시 조회하지 않기 위해서다.
+	@Transactional
+	public void insertNearbyRestaurantList(String roomUuid, Double lat, Double lng) {
+		List<KakaoRestaurantResponseDto> nearbyList = kakaoLocalClient.findNearbyRestaurantList(lat, lng);
+		if (nearbyList.isEmpty()) {
+			return;
+		}
+
+		List<Restaurant> restaurants = nearbyList.stream()
+				.map(nearby -> toApiRestaurant(roomUuid, nearby))
+				.toList();
+
+		restaurantMapper.insertRestaurantList(restaurants);
+	}
+
+	// 자동 수집이라 등록자(ADDED_BY)가 없다. 카카오 장소 ID 는 숫자 문자열이라 NUMBER 컬럼에 맞춰 변환한다.
+	private Restaurant toApiRestaurant(String roomUuid, KakaoRestaurantResponseDto nearby) {
+		return Restaurant.builder()
+				.roomUuid(roomUuid)
+				.source("API")
+				.kakaoPlaceId(Long.valueOf(nearby.getKakaoPlaceId()))
+				.name(nearby.getName())
+				.category(nearby.getCategory())
+				.address(nearby.getAddress())
+				.roadAddress(nearby.getRoadAddress())
+				.phone(nearby.getPhone())
+				.placeUrl(nearby.getPlaceUrl())
+				.lat(nearby.getLat())
+				.lng(nearby.getLng())
+				.build();
+	}
+
 	@Transactional(readOnly = true)
 	public List<RestaurantResponseDto> findRestaurantList(String roomUuid) {
 		roomService.findRoom(roomUuid);

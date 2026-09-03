@@ -37,6 +37,55 @@
 			   )
 	</insert>
 
+	<insert id="insertRestaurantList">
+		BEGIN
+		<foreach collection="list" item="item">
+			INSERT
+			  INTO
+				   RESTAURANT (
+								 RESTAURANT_ID
+							   , ROOM_ID
+							   , NAME
+							   , SOURCE
+							   , ADDRESS
+							   , LAT
+							   , LNG
+							   , ADDED_BY
+							   , CREATED_AT
+							   , KAKAO_PLACE_ID
+							   , CATEGORY
+							   , ROAD_ADDRESS
+							   , PHONE
+							   , PLACE_URL
+							   )
+			VALUES
+				   (
+					 SEQ_RESTAURANT.NEXTVAL
+				   , (
+					   SELECT
+							  ROOM_ID
+						 FROM
+							  ROOM
+						WHERE
+							  ROOM_UUID = #{item.roomUuid}
+					 )
+				   , #{item.name}
+				   , #{item.source}
+				   , #{item.address}
+				   , #{item.lat}
+				   , #{item.lng}
+				   , #{item.participantId}
+				   , SYSDATE
+				   , #{item.kakaoPlaceId}
+				   , #{item.category}
+				   , #{item.roadAddress}
+				   , #{item.phone}
+				   , #{item.placeUrl}
+				   );
+		</foreach>
+		END;
+	</insert>
+
 	<select id="findRestaurantList" resultType="RestaurantResponseDto">
 		SELECT
 			   r.RESTAURANT_ID
@@ -47,6 +96,10 @@
 			 , r.LNG
 			 , r.ADDED_BY
 			 , r.CREATED_AT
+			 , r.CATEGORY
+			 , r.ROAD_ADDRESS
+			 , r.PHONE
+			 , r.PLACE_URL
 		  FROM 
 			   RESTAURANT r
 		  JOIN 

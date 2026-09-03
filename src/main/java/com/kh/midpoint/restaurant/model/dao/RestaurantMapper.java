@@ -11,6 +11,8 @@ public interface RestaurantMapper {
 
 	void insertRestaurant(Restaurant restaurant);
 
+	void insertRestaurantList(List<Restaurant> restaurants);
+
 	List<RestaurantResponseDto> findRestaurantList(String roomUuid);
 
 }
