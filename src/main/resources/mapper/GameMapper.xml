@@ -8,14 +8,14 @@
         <result property="hostParticipantId" column="HOST_PARTICIPANT_ID"/>
         <result property="createdAt" column="CREATED_AT"/>
     </resultMap>
-
+    
     <resultMap id="participantMap" type="com.kh.midpoint.game.model.dto.GameParticipantQueryResponseDto">
         <id property="participantId" column="PARTICIPANT_ID"/>
         <result property="playerName" column="PLAYER_NAME"/>
         <result property="playerStatus" column="PLAYER_STATUS"/>
     </resultMap>
 
-      <select id="findGameState" resultMap="gameMap">
+    <select id="findGameState" resultMap="gameRoomMap">
         SELECT R.ROOM_ID, R.ROOM_UUID, R.CREATED_AT,
                (SELECT P.PARTICIPANT_ID FROM PARTICIPANT P
                 WHERE P.ROOM_ID = R.ROOM_ID AND P.IS_HOST = 'Y' AND P.LEFT_AT IS NULL
@@ -24,5 +24,14 @@
         WHERE R.ROOM_UUID = #{roomUuid}
     </select>
 
+    <select id="findPlayerList" resultMap="participantMap">
+        SELECT PARTICIPANT_ID,
+               NICKNAME AS PLAYER_NAME,
+               CASE WHEN LEFT_AT IS NULL THEN 'ACTIVE' ELSE 'LEFT' END AS PLAYER_STATUS
+          FROM PARTICIPANT
+         WHERE ROOM_ID = #{roomId}
+           AND LEFT_AT IS NULL
+         ORDER BY JOINED_AT, PARTICIPANT_ID
+    </select>
 
 </mapper>

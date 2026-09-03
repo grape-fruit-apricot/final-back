@@ -1,8 +1,8 @@
 package com.kh.midpoint.game.model.dto;
 
-import java.util.List;
 import java.util.Map;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,12 +14,10 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class GameStateResponseDto {
-    private String roomUuid;
+public class GameStateUpdateRequestDto {
+    @NotNull
     private Long participantId;
-    private Long hostId;
-    private boolean host;
-    private List<GameParticipantResponseDto> players;
-    private Map<String, Object> gameState;
     private long version;
+    @NotNull
+    private Map<String, Object> state;
 }

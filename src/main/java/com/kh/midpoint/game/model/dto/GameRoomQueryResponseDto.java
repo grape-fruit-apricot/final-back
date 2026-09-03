@@ -19,7 +19,7 @@ import lombok.ToString;
 public class GameRoomQueryResponseDto {
     private Long roomId;
     private String roomUuid;
-    private Long hostParticipantId;
+    private Long hostId;
     private LocalDateTime createdAt;
     private List<GameParticipantQueryResponseDto> players = new ArrayList<>();
 }
