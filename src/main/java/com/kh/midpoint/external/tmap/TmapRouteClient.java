@@ -6,11 +6,13 @@ import tools.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,24 +20,39 @@ import java.util.Map;
 @Component
 public class TmapRouteClient {
 
-	@Value("${route.start}")
-	private String startName = "출발";
-	
-	@Value("${route.end}")
-	private String endName = "도착";
-	
-	@Value("${route.near}")
-	private double nearMeter = 110.0;
-	
-	@Value("${route.radius}")
-	private double earthRadiusMeter = 6371000;
+	// 타임아웃을 지정하지 않으면 무제한이라, Tmap 이 응답하지 않을 때 호출한 쪽이 그대로 묶인다.
+	// 참가자 수만큼 순차 호출하는 경로가 있어 한 번의 대기가 전체 지연으로 이어진다.
+	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+	private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
+
+	// 필드 초기값은 기본값 역할을 하지 못한다. 스프링이 주입하면서 덮어쓰고, 키가 없으면
+	// 초기값이 쓰이는 게 아니라 기동이 실패한다. 저장소에 yml 이 없으므로(.gitignore 의 *.yml)
+	// 원래 의도했던 값을 플레이스홀더 기본값으로 옮겨 적는다. yml 로 덮어쓰는 건 그대로 된다.
+	@Value("${route.start:출발}")
+	private String startName;
+
+	@Value("${route.end:도착}")
+	private String endName;
+
+	@Value("${route.near:110.0}")
+	private double nearMeter;
+
+	@Value("${route.radius:6371000}")
+	private double earthRadiusMeter;
 
 	private final RestClient restClient;
 	private final String appKey;
 
 	public TmapRouteClient(@Value("${tmap.app-key}") String appKey) {
 		this.appKey = appKey;
-		this.restClient = RestClient.builder().build();
+
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+		requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+		requestFactory.setReadTimeout(READ_TIMEOUT);
+
+		this.restClient = RestClient.builder()
+				.requestFactory(requestFactory)
+				.build();
 	}
 
 	@Cacheable(cacheNames = "route-pedestrian", key = "#startX + ',' + #startY + ',' + #endX + ',' + #endY")
@@ -87,7 +104,7 @@ public class TmapRouteClient {
 	}
 
 	private TmapRouteDto parseRoute(JsonNode response) {
-		validApi(response);
+		validateApi(response);
 		
 		int totalTimeSeconds = 0;
 		List<RoutePointDto> points = new ArrayList<>();
@@ -110,13 +127,13 @@ public class TmapRouteClient {
 			}
 		}
 
-		validPoints(points);
+		validatePoints(points);
 
 		int timeMinutes = (int) Math.ceil(totalTimeSeconds / 60.0);
 		return new TmapRouteDto(timeMinutes, points);
 	}
 	
-	private void validApi(JsonNode response) {
+	private void validateApi(JsonNode response) {
 		if (response == null) {
 			throw new ExternalApiException("Tmap 응답을 받지 못했습니다.");
 		}
@@ -127,7 +144,7 @@ public class TmapRouteClient {
 		}
 	}
 	
-	private void validPoints(List<RoutePointDto> points) {
+	private void validatePoints(List<RoutePointDto> points) {
 		if (points.isEmpty()) {
 			throw new NotFoundException("도보 경로 좌표를 받지 못했습니다.");
 		}

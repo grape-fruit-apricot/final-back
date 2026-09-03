@@ -1,10 +1,12 @@
 package com.kh.midpoint.external.kakao;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -17,6 +19,10 @@ import tools.jackson.databind.JsonNode;
 
 @Component
 public class KakaoLocalClient {
+
+	// 타임아웃을 지정하지 않으면 무제한이라, 카카오가 응답하지 않을 때 호출한 쪽이 그대로 묶인다.
+	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+	private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
 
 	@Value("${search.category.subway.code}")
 	private String subwayCode;
@@ -37,9 +43,14 @@ public class KakaoLocalClient {
 
 	public KakaoLocalClient(@Value("${kakao.rest-api-key}") String kakaoRestApiKey,
 							@Value("${search.category.url}") String categoryUrl) {
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+		requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+		requestFactory.setReadTimeout(READ_TIMEOUT);
+
 		this.categoryClient = RestClient.builder()
 				.baseUrl(categoryUrl)
 				.defaultHeader("Authorization", "KakaoAK " + kakaoRestApiKey)
+				.requestFactory(requestFactory)
 				.build();
 	}
 

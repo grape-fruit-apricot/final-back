@@ -35,7 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	@Value("${chat.heartbeat-interval}")
+	// .gitignore 가 *.yml 을 전부 제외해 설정 파일이 저장소에 없다. 기본값이 없으면
+	// 이 키를 로컬 yml 에 직접 넣지 않은 팀원은 기동 자체가 실패한다(placeholder 미해결).
+	// 값은 yml 로 계속 덮어쓸 수 있고, 기본값은 이 설정이 상수였을 때의 10초를 유지한다.
+	@Value("${chat.heartbeat-interval:10000}")
 	private long heartbeatInterval;
 
 	private final ThreadPoolTaskScheduler heartbeatScheduler = createHeartbeatScheduler();

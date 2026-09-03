@@ -72,17 +72,23 @@
 			   PR.PARTICIPANT_ID
 	</select>
 
-	<select id="findRoutePointList" parameterType="long" resultType="RoutePointDto">
+	<select id="findRoutePointListByRoom" parameterType="long" resultType="RoutePointQueryDto">
 		SELECT
-			   LAT
-			 , LNG
+			   PRP.ROUTE_ID
+			 , PRP.LAT
+			 , PRP.LNG
 		  FROM
-			   PARTICIPANT_ROUTE_POINT
+			   PARTICIPANT_ROUTE_POINT PRP
+		  JOIN
+			   PARTICIPANT_ROUTE PR
+			ON
+			   PR.ROUTE_ID = PRP.ROUTE_ID
 		 WHERE
-			   ROUTE_ID = #{routeId}
+			   PR.ROOM_ID = #{roomId}
 		 ORDER
 			BY
-			   POINT_ORDER
+			   PRP.ROUTE_ID
+			 , PRP.POINT_ORDER
 	</select>
 
 </mapper>

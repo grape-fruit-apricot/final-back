@@ -27,11 +27,11 @@ public class SelectionController {
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@PostMapping("/participants/{participantId}/selection")
-	public ResponseEntity<ApiResponse<SelectionResponseDto>> selectRestaurant(
+	public ResponseEntity<ApiResponse<SelectionResponseDto>> insertSelection(
 			@PathVariable("roomUuid") String roomUuid,
 			@PathVariable("participantId") Long participantId,
 			@Valid @RequestBody SelectionRequestDto requestDto) {
-		SelectionResponseDto responseDto = selectionService.selectRestaurant(roomUuid, participantId, requestDto);
+		SelectionResponseDto responseDto = selectionService.insertSelection(roomUuid, participantId, requestDto);
 
 		// 선택은 방 전체가 함께 보는 정보라, 갱신된 현황을 통째로 브로드캐스트한다.
 		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/selections",
@@ -42,7 +42,7 @@ public class SelectionController {
 	}
 
 	@GetMapping("/selections")
-	public ResponseEntity<ApiResponse<List<SelectionResponseDto>>> findSelectionList(@PathVariable String roomUuid) {
+	public ResponseEntity<ApiResponse<List<SelectionResponseDto>>> findSelectionList(@PathVariable("roomUuid") String roomUuid) {
 		List<SelectionResponseDto> responseDto = selectionService.findSelectionList(roomUuid);
 		return ResponseEntity.ok(ApiResponse.ok("선택 현황 조회에 성공했습니다.", responseDto));
 	}

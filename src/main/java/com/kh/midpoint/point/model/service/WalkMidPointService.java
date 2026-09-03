@@ -15,68 +15,67 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WalkMidPointService {
 
-    private final TmapRouteClient tmapRouteClient;
+	private final TmapRouteClient tmapRouteClient;
 
-    public NearbyStationDto pickBest(List<ParticipantResponseDto> participants, List<NearbyStationDto> candidates) {
-        NearbyStationDto best = null;
-        int bestMaxMinutes = Integer.MAX_VALUE;
+	public NearbyStationDto pickBest(List<ParticipantResponseDto> participants, List<NearbyStationDto> candidates) {
+		NearbyStationDto best = null;
+		int bestMaxMinutes = Integer.MAX_VALUE;
 
-        for (NearbyStationDto candidate : candidates) {
+		for (NearbyStationDto candidate : candidates) {
 
-            Integer maxMinutes = getMaxWalkingMinutes(participants, candidate);
+			Integer maxMinutes = getMaxWalkingMinutes(participants, candidate);
 
-            if (maxMinutes != null
-                    && maxMinutes < bestMaxMinutes) {
+			if (maxMinutes != null
+					&& maxMinutes < bestMaxMinutes) {
 
-                bestMaxMinutes = maxMinutes;
-                best = candidate;
-            }
-        }
+				bestMaxMinutes = maxMinutes;
+				best = candidate;
+			}
+		}
 
-        validateBest(best);
+		validateBest(best);
 
-        return best;
-    }
+		return best;
+	}
 
-    // 후보 전부에서 참가자 한 명이라도 도보 경로를 못 찾으면 best 가 null 로 남는다.
-    // 그대로 반환하면 호출부에서 NPE 가 나므로 여기서 걸러낸다.
-    private void validateBest(NearbyStationDto best) {
-        if (best == null) {
-            throw new NotFoundException("모든 후보 지점에서 도보 경로를 찾지 못했습니다.");
-        }
-    }
+	// 후보 전부에서 참가자 한 명이라도 도보 경로를 못 찾으면 best 가 null 로 남는다.
+	// 그대로 반환하면 호출부에서 NPE 가 나므로 여기서 걸러낸다.
+	private void validateBest(NearbyStationDto best) {
+		if (best == null) {
+			throw new NotFoundException("모든 후보 지점에서 도보 경로를 찾지 못했습니다.");
+		}
+	}
 
-    private Integer getMaxWalkingMinutes(List<ParticipantResponseDto> participants, NearbyStationDto candidate) {
-        int maxMinutes = 0;
+	private Integer getMaxWalkingMinutes(List<ParticipantResponseDto> participants, NearbyStationDto candidate) {
+		int maxMinutes = 0;
 
-        for (ParticipantResponseDto participant : participants) {
+		for (ParticipantResponseDto participant : participants) {
 
-            Integer minutes = getWalkingMinutesOrNull(participant, candidate);
+			Integer minutes = getWalkingMinutesOrNull(participant, candidate);
 
-            if (minutes == null) {
-                return null;
-            }
+			if (minutes == null) {
+				return null;
+			}
 
-            maxMinutes = Math.max(maxMinutes, minutes);
-        }
+			maxMinutes = Math.max(maxMinutes, minutes);
+		}
 
-        return maxMinutes;
-    }
+		return maxMinutes;
+	}
 
-    private Integer getWalkingMinutesOrNull(ParticipantResponseDto participant, NearbyStationDto candidate) {
-        try {
-            return tmapRouteClient.getPedestrianRoute(
-                            							participant.getPrefLng(),
-                            							participant.getPrefLat(),
-                            							candidate.getLng(),
-                            							candidate.getLat()
-                    								 )
-                    			  .getTimeMinutes();
+	private Integer getWalkingMinutesOrNull(ParticipantResponseDto participant, NearbyStationDto candidate) {
+		try {
+			return tmapRouteClient.getPedestrianRoute(
+					participant.getPrefLng(),
+					participant.getPrefLat(),
+					candidate.getLng(),
+					candidate.getLat())
+					.getTimeMinutes();
 
-        } catch (NotFoundException e) {
-            return null;
-        }
-    }
+		} catch (NotFoundException e) {
+			return null;
+		}
+	}
 
 }
 

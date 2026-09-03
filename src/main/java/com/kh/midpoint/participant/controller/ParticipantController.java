@@ -15,10 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kh.midpoint.common.response.ApiResponse;
-import com.kh.midpoint.participant.model.dto.JoinRoomRequest;
+import com.kh.midpoint.participant.model.dto.JoinRoomRequestDto;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,16 +31,16 @@ public class ParticipantController {
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<ParticipantResponseDto>> join(@PathVariable("roomUuid") String roomUuid, @RequestBody JoinRoomRequest request) {
-		ParticipantResponseDto responseDto = participantService.join(roomUuid, request);
+	public ResponseEntity<ApiResponse<ParticipantResponseDto>> insertParticipant(@PathVariable("roomUuid") String roomUuid, @Valid @RequestBody JoinRoomRequestDto request) {
+		ParticipantResponseDto responseDto = participantService.insertParticipant(roomUuid, request);
 		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/participants", responseDto);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.created("참여자가 등록되었습니다.", responseDto));
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<ParticipantResponseDto>>> findAllParticipantList(@PathVariable("roomUuid") String roomUuid) {
-		List<ParticipantResponseDto> responseDto = participantService.findAllParticipants(roomUuid);
+	public ResponseEntity<ApiResponse<List<ParticipantResponseDto>>> findParticipantList(@PathVariable("roomUuid") String roomUuid) {
+		List<ParticipantResponseDto> responseDto = participantService.findParticipantList(roomUuid);
 		return ResponseEntity.ok(ApiResponse.ok("참가자 목록 조회에 성공했습니다.", responseDto));
 	}
 
@@ -50,7 +51,7 @@ public class ParticipantController {
 		// 준비 현황은 방 전체가 함께 보는 정보라 갱신된 참가자 목록을 통째로 브로드캐스트한다.
 		// 입장 토픽은 새 참가자 1명만 보내므로 목록 전체를 보내는 별도 토픽을 쓴다.
 		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/participants/ready",
-				participantService.findAllParticipants(roomUuid));
+				participantService.findParticipantList(roomUuid));
 
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiResponse.created("준비 상태가 변경되었습니다.", null));
