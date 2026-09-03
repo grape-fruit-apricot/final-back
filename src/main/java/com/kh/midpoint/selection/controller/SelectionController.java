@@ -28,8 +28,8 @@ public class SelectionController {
 
 	@PostMapping("/participants/{participantId}/selection")
 	public ResponseEntity<ApiResponse<SelectionResponseDto>> insertSelection(
-			@PathVariable String roomUuid,
-			@PathVariable Long participantId,
+			@PathVariable("roomUuid") String roomUuid,
+			@PathVariable("participantId") Long participantId,
 			@Valid @RequestBody SelectionRequestDto requestDto) {
 		SelectionResponseDto responseDto = selectionService.insertSelection(roomUuid, participantId, requestDto);
 
@@ -42,7 +42,7 @@ public class SelectionController {
 	}
 
 	@GetMapping("/selections")
-	public ResponseEntity<ApiResponse<List<SelectionResponseDto>>> findSelectionList(@PathVariable String roomUuid) {
+	public ResponseEntity<ApiResponse<List<SelectionResponseDto>>> findSelectionList(@PathVariable("roomUuid") String roomUuid) {
 		List<SelectionResponseDto> responseDto = selectionService.findSelectionList(roomUuid);
 		return ResponseEntity.ok(ApiResponse.ok("선택 현황 조회에 성공했습니다.", responseDto));
 	}

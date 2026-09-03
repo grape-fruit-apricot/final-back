@@ -30,7 +30,7 @@ public class RestaurantController {
 
 	@PostMapping
 	public ResponseEntity<ApiResponse<Void>> insertRestaurant(
-			@PathVariable String roomUuid,
+			@PathVariable("roomUuid") String roomUuid,
 			@Valid @RequestBody RestaurantCreateRequestDto requestDto) {
 		restaurantService.insertRestaurant(roomUuid, requestDto);
 
@@ -44,13 +44,13 @@ public class RestaurantController {
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<RestaurantResponseDto>>> findRestaurantList(@PathVariable String roomUuid) {
+	public ResponseEntity<ApiResponse<List<RestaurantResponseDto>>> findRestaurantList(@PathVariable("roomUuid") String roomUuid) {
 		List<RestaurantResponseDto> responseDto = restaurantService.findRestaurantList(roomUuid);
 		return ResponseEntity.ok(ApiResponse.ok("식당 목록 조회에 성공했습니다.", responseDto));
 	}
 
 	@GetMapping("/nearby")
-	public ResponseEntity<ApiResponse<List<KakaoRestaurantResponseDto>>> findNearbyRestaurantList(@PathVariable String roomUuid,
+	public ResponseEntity<ApiResponse<List<KakaoRestaurantResponseDto>>> findNearbyRestaurantList(@PathVariable("roomUuid") String roomUuid,
 																								  @RequestParam Double lat,
 																								  @RequestParam Double lng) {
 		List<KakaoRestaurantResponseDto> responseDto = restaurantService.findNearbyRestaurantList(roomUuid, lat, lng);

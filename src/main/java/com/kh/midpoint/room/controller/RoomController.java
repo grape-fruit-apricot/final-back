@@ -30,7 +30,7 @@ public class RoomController {
 	}
 
 	@GetMapping("/{roomUuid}")
-	public ResponseEntity<ApiResponse<RoomResponseDto>> findRoom(@PathVariable String roomUuid) {
+	public ResponseEntity<ApiResponse<RoomResponseDto>> findRoom(@PathVariable("roomUuid") String roomUuid) {
 		RoomResponseDto responseDto = roomService.findRoom(roomUuid);
 		return ResponseEntity.ok(ApiResponse.ok("방 조회에 성공했습니다.", responseDto));
 	}

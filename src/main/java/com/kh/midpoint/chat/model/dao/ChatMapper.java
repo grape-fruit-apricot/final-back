@@ -18,6 +18,8 @@ public interface ChatMapper {
 
 	ChatMessageResponseDto findMessage(Long messageId);
 
-	List<ChatMessageResponseDto> findMessageList(Long roomId);
+	/** afterMessageId 가 null 이면 최근 100건, 값이 있으면 그 이후 메시지만 */
+	List<ChatMessageResponseDto> findMessageList(@Param("roomId") Long roomId,
+			@Param("afterMessageId") Long afterMessageId);
 
 }

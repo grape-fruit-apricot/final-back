@@ -25,17 +25,20 @@ public class TmapRouteClient {
 	private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
 	private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
 
-	@Value("${route.start}")
-	private String startName = "출발";
-	
-	@Value("${route.end}")
-	private String endName = "도착";
-	
-	@Value("${route.near}")
-	private double nearMeter = 110.0;
-	
-	@Value("${route.radius}")
-	private double earthRadiusMeter = 6371000;
+	// 필드 초기값은 기본값 역할을 하지 못한다. 스프링이 주입하면서 덮어쓰고, 키가 없으면
+	// 초기값이 쓰이는 게 아니라 기동이 실패한다. 저장소에 yml 이 없으므로(.gitignore 의 *.yml)
+	// 원래 의도했던 값을 플레이스홀더 기본값으로 옮겨 적는다. yml 로 덮어쓰는 건 그대로 된다.
+	@Value("${route.start:출발}")
+	private String startName;
+
+	@Value("${route.end:도착}")
+	private String endName;
+
+	@Value("${route.near:110.0}")
+	private double nearMeter;
+
+	@Value("${route.radius:6371000}")
+	private double earthRadiusMeter;
 
 	private final RestClient restClient;
 	private final String appKey;
