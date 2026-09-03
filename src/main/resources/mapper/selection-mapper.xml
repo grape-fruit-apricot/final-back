@@ -12,6 +12,27 @@
 		 	   PARTICIPANT_ID = #{participantId}
 	</select>
 
+	<select id="findSelectionList" resultType="SelectionResponseDto">
+		SELECT
+			   s.PARTICIPANT_ID
+			 , s.RESTAURANT_ID
+		  FROM
+			   SELECTION s
+		  JOIN
+			   PARTICIPANT p
+			ON
+			   p.PARTICIPANT_ID = s.PARTICIPANT_ID
+		  JOIN
+			   ROOM r
+			ON
+			   r.ROOM_ID = p.ROOM_ID
+		 WHERE
+			   r.ROOM_UUID = #{roomUuid}
+		 ORDER
+			BY
+			   s.PARTICIPANT_ID
+	</select>
+
 	<update id="upsertSelection" parameterType="Selection">
 		MERGE 
 		 INTO 
