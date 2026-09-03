@@ -4,6 +4,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -14,6 +15,7 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -22,16 +24,26 @@ import com.kh.midpoint.chat.model.service.ChatService;
 import com.kh.midpoint.chat.model.vo.ChatSession;
 import com.kh.midpoint.common.exception.InvalidStateException;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
-@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+	/** heartbeat 주고받는 간격(ms). 이 시간 동안 신호가 없으면 끊긴 연결로 본다. */
+	private static final long HEARTBEAT_INTERVAL = 10_000L;
+
 	private final ChatService chatService;
+
+	/** 스프링이 WebSocket 용으로 이미 만들어 둔 스케줄러. heartbeat 발송에 쓴다. */
+	private final TaskScheduler messageBrokerTaskScheduler;
+
+	public WebSocketConfig(ChatService chatService,
+			@Qualifier("messageBrokerTaskScheduler") TaskScheduler messageBrokerTaskScheduler) {
+		this.chatService = chatService;
+		this.messageBrokerTaskScheduler = messageBrokerTaskScheduler;
+	}
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -42,7 +54,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
-		registry.enableSimpleBroker("/topic");
+		registry.enableSimpleBroker("/topic")
+				.setHeartbeatValue(new long[] { HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL })
+				.setTaskScheduler(messageBrokerTaskScheduler);
 		registry.setApplicationDestinationPrefixes("/app");
 	}
 
