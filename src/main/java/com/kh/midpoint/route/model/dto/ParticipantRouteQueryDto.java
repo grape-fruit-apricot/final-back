@@ -16,6 +16,7 @@ public class ParticipantRouteQueryDto {
 	private Long routeId;
 	private Long participantId;
 	private String nickname;
+	private String travelMode;
 	private Integer timeMinutes;
 
 }

@@ -7,7 +7,9 @@ import lombok.Value;
 @Builder
 public class ParticipantRoutePoint {
 
+	Long roomId;
 	Long participantId;
+	String travelMode;
 	Integer pointOrder;
 	Double lat;
 	Double lng;
