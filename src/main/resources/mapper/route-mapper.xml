@@ -17,7 +17,7 @@
 				 SEQ_PARTICIPANT_ROUTE.NEXTVAL
 			   , #{roomId}
 			   , #{participantId}
-			   , 'WALK'
+			   , #{travelMode}
 			   , #{timeMinutes}
 			   )
 	</insert>
@@ -43,7 +43,9 @@
 						 FROM
 							  PARTICIPANT_ROUTE
 						WHERE
-							  PARTICIPANT_ID = #{point.participantId}
+							  ROOM_ID = #{point.roomId}
+						  AND PARTICIPANT_ID = #{point.participantId}
+						  AND TRAVEL_MODE = #{point.travelMode}
 					 )
 				   , #{point.pointOrder}
 				   , #{point.lat}
@@ -53,11 +55,12 @@
 		END;
 	</insert>
 
-	<select id="findRouteList" parameterType="long" resultType="ParticipantRouteQueryDto">
+	<select id="findRouteList" resultType="ParticipantRouteQueryDto">
 		SELECT
 			   PR.ROUTE_ID
 			 , PR.PARTICIPANT_ID
 			 , P.NICKNAME
+			 , PR.TRAVEL_MODE
 			 , PR.TIME_MINUTES
 		  FROM
 			   PARTICIPANT_ROUTE PR
@@ -67,9 +70,13 @@
 			   P.PARTICIPANT_ID = PR.PARTICIPANT_ID
 		 WHERE
 			   PR.ROOM_ID = #{roomId}
+		<if test="travelMode != null">
+		   AND PR.TRAVEL_MODE = #{travelMode}
+		</if>
 		 ORDER
 			BY
 			   PR.PARTICIPANT_ID
+			 , CASE PR.TRAVEL_MODE WHEN 'WALK' THEN 1 WHEN 'TRANSIT' THEN 2 ELSE 3 END
 	</select>
 
 	<select id="findRoutePointListByRoom" parameterType="long" resultType="RoutePointQueryDto">

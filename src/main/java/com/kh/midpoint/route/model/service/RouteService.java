@@ -2,6 +2,10 @@ package com.kh.midpoint.route.model.service;
 
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
+import com.kh.midpoint.external.kakao.KakaoLocalClient;
+import com.kh.midpoint.external.kakao.KakaoTransitClient;
+import com.kh.midpoint.external.kakao.NearbyStationDto;
+import com.kh.midpoint.external.kakao.TransitRouteResponseDto;
 import com.kh.midpoint.external.tmap.RoutePointDto;
 import com.kh.midpoint.external.tmap.TmapRouteClient;
 import com.kh.midpoint.external.tmap.TmapRouteDto;
@@ -24,11 +28,13 @@ import com.kh.midpoint.selection.model.dto.SelectionResponseDto;
 import com.kh.midpoint.selection.model.service.SelectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +47,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RouteService {
 
+	@Value("${route.mode.walk}")
+	private String walkMode;
+
+	@Value("${route.mode.transit}")
+	private String transitMode;
+
+	@Value("${route.transit.station-count}")
+	private int transitStationCount;
+
 	private final RoomService roomService;
 	private final ParticipantService participantService;
 	private final SelectionService selectionService;
@@ -48,11 +63,13 @@ public class RouteService {
 	private final RoomResultService roomResultService;
 	private final RouteMapper routeMapper;
 	private final TmapRouteClient tmapRouteClient;
+	private final KakaoLocalClient kakaoLocalClient;
+	private final KakaoTransitClient kakaoTransitClient;
 	private final TransactionTemplate transactionTemplate;
 
-	// 여기에는 @Transactional 을 붙이지 않는다. 참가자 수만큼 Tmap 을 순차 호출하므로
-	// 트랜잭션으로 묶으면 그 시간 내내 DB 커넥션과 PARTICIPANT_ROUTE 잠금을 붙잡는다.
-	// 저장은 참가자 1명 단위로 transactionTemplate 안에서 짧게 끊는다.
+	// 참가자별 외부 경로 API 호출이 끝날 때까지 DB 트랜잭션이 유지되지 않도록
+	// 외부 API 조회는 트랜잭션 밖에서 수행한다.
+	// 경로와 좌표 저장은 참가자별 이동수단 하나의 단위로 짧게 처리한다.
 	public RouteResponseDto findRoute(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 		// 게임이 도는 중에는 결과를 확정하지 않는다. 이게 없으면 방장이 무작위 우회를 눌러
@@ -72,17 +89,18 @@ public class RouteService {
 	}
 
 	// 이미 확정된 결과를 다시 계산하지 않고 읽기만 한다. 새로고침이나 뒤늦은 입장에서
-	// findRoute 를 다시 부르면 경로를 중복 저장하려다 UK_PART_ROUTE_PART 에 걸릴 수 있다.
+	// findRoute 를 다시 불러도 방·참가자·이동수단이 같은 기존 경로를 재사용한다.
 	@Transactional(readOnly = true)
-	public RouteResponseDto findRouteResult(String roomUuid) {
+	public RouteResponseDto findRouteResult(String roomUuid, String travelMode) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
+		validateTravelMode(travelMode);
 
 		RestaurantResponseDto restaurant = roomResultService.findRoomResult(room.getRoomId());
 		if (restaurant == null) {
 			throw new NotFoundException("아직 확정된 결과가 없습니다.");
 		}
 
-		List<ParticipantRouteQueryDto> routes = routeMapper.findRouteList(room.getRoomId());
+		List<ParticipantRouteQueryDto> routes = routeMapper.findRouteList(room.getRoomId(), travelMode);
 
 		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId(), routes));
 	}
@@ -132,47 +150,69 @@ public class RouteService {
 	// 하지만, 이미 확정된 방을 다시 부르는 경우에는 처음 조회한 결과를 그대로 재사용한다.
 	private List<ParticipantRouteQueryDto> insertMissingRouteList(Long roomId,
 			List<ParticipantResponseDto> participants, RestaurantResponseDto restaurant) {
-		List<ParticipantRouteQueryDto> savedRoutes = routeMapper.findRouteList(roomId);
-		Set<Long> savedParticipantIds = savedRoutes.stream()
-				.map(ParticipantRouteQueryDto::getParticipantId)
-				.collect(Collectors.toSet());
+		List<ParticipantRouteQueryDto> savedRoutes = routeMapper.findRouteList(roomId, null);
+		Set<String> savedRouteKeys = savedRoutes.stream()
+				.map(route -> findRouteKey(route.getParticipantId(), route.getTravelMode()))
+				.collect(Collectors.toCollection(HashSet::new));
 
-		boolean inserted = false;
 		for (ParticipantResponseDto participant : participants) {
-			if (savedParticipantIds.contains(participant.getParticipantId())) {
-				continue;
-			}
-
-			TmapRouteDto route = findParticipantRoute(participant, restaurant);
-			if (route == null) {
-				continue;
-			}
-
-			// 경로 1건과 그 좌표는 함께 저장돼야 한다. 외부 호출은 이 바깥에 두고 저장만 감싼다.
-			transactionTemplate.executeWithoutResult(
-					status -> insertRoute(roomId, participant.getParticipantId(), route));
-			inserted = true;
+			insertMissingRoute(roomId, participant, restaurant, walkMode, savedRouteKeys);
+			insertMissingRoute(roomId, participant, restaurant, transitMode, savedRouteKeys);
 		}
 
-		return inserted ? routeMapper.findRouteList(roomId) : savedRoutes;
+		return routeMapper.findRouteList(roomId, null);
 	}
 
-	private TmapRouteDto findParticipantRoute(ParticipantResponseDto participant,
-			RestaurantResponseDto restaurant) {
+	private void insertMissingRoute(Long roomId, ParticipantResponseDto participant,
+			RestaurantResponseDto restaurant, String travelMode, Set<String> savedRouteKeys) {
+		String routeKey = findRouteKey(participant.getParticipantId(), travelMode);
+		if (savedRouteKeys.contains(routeKey)) {
+			return;
+		}
+
 		try {
-			return tmapRouteClient.getPedestrianRoute(
-					participant.getPrefLng(), participant.getPrefLat(),
-					restaurant.getLng(), restaurant.getLat());
+			TmapRouteDto route = travelMode.equals(walkMode)
+					? findWalkRoute(participant, restaurant)
+					: findTransitRoute(participant, restaurant);
+			transactionTemplate.executeWithoutResult(status -> insertRoute(
+					roomId, participant.getParticipantId(), travelMode, route));
+			savedRouteKeys.add(routeKey);
 		} catch (RuntimeException e) {
-			log.warn("참가자 {} 도보 경로 조회 실패", participant.getParticipantId(), e);
-			return null;
+			log.warn("참가자 {} {} 경로 생성 실패", participant.getParticipantId(), travelMode, e);
 		}
 	}
 
-	private void insertRoute(Long roomId, Long participantId, TmapRouteDto route) {
+	private TmapRouteDto findWalkRoute(ParticipantResponseDto participant,
+			RestaurantResponseDto restaurant) {
+		return tmapRouteClient.getPedestrianRoute(
+				participant.getPrefLng(), participant.getPrefLat(),
+				restaurant.getLng(), restaurant.getLat());
+	}
+
+	private TmapRouteDto findTransitRoute(ParticipantResponseDto participant,
+			RestaurantResponseDto restaurant) {
+		List<NearbyStationDto> stations = kakaoLocalClient.findNearbySubwayStations(
+				participant.getPrefLng(), participant.getPrefLat(), transitStationCount);
+		validateNearbyStationList(stations);
+
+		NearbyStationDto station = stations.get(0);
+		TransitRouteResponseDto route = kakaoTransitClient.findTransitRoute(
+				station.getLng(), station.getLat(), restaurant.getLng(), restaurant.getLat());
+		return new TmapRouteDto(route.getTimeMinutes(), route.getPoints());
+	}
+
+	private void validateNearbyStationList(List<NearbyStationDto> stations) {
+		if (stations.isEmpty()) {
+			throw new NotFoundException("참가자 주변의 지하철역을 찾지 못했습니다.");
+		}
+	}
+
+	private void insertRoute(Long roomId, Long participantId, String travelMode,
+			TmapRouteDto route) {
 		ParticipantRoute participantRoute = ParticipantRoute.builder()
 				.roomId(roomId)
 				.participantId(participantId)
+				.travelMode(travelMode)
 				.timeMinutes(route.getTimeMinutes())
 				.build();
 		routeMapper.insertRoute(participantRoute);
@@ -180,7 +220,9 @@ public class RouteService {
 		List<ParticipantRoutePoint> routePoints = new ArrayList<>();
 		for (int index = 0; index < route.getPoints().size(); index++) {
 			routePoints.add(ParticipantRoutePoint.builder()
+					.roomId(roomId)
 					.participantId(participantId)
+					.travelMode(travelMode)
 					.pointOrder(index)
 					.lat(route.getPoints().get(index).getLat())
 					.lng(route.getPoints().get(index).getLng())
@@ -202,9 +244,20 @@ public class RouteService {
 				.map(route -> new ParticipantRouteResponseDto(
 						route.getParticipantId(),
 						route.getNickname(),
+						route.getTravelMode(),
 						route.getTimeMinutes(),
 						pointsByRouteId.getOrDefault(route.getRouteId(), List.of())))
 				.toList();
+	}
+
+	private void validateTravelMode(String travelMode) {
+		if (!walkMode.equals(travelMode) && !transitMode.equals(travelMode)) {
+			throw new InvalidStateException("이동수단은 WALK 또는 TRANSIT이어야 합니다.");
+		}
+	}
+
+	private String findRouteKey(Long participantId, String travelMode) {
+		return participantId + ":" + travelMode;
 	}
 
 }

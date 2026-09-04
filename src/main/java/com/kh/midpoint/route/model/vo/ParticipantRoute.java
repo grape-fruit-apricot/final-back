@@ -9,6 +9,7 @@ public class ParticipantRoute {
 
 	Long roomId;
 	Long participantId;
+	String travelMode;
 	Integer timeMinutes;
 
 }
