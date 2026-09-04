@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.game.model.dao.GameMapper">
+
+	<!-- 첫 차례 마감 시각을 DB 시계로 계산한다. n/86400 을 더하면 TIMESTAMP 가 DATE 로 바뀌어 정밀도를 잃는다. -->
+	<insert id="insertGame" parameterType="Game">
+		INSERT
+		  INTO
+			   GAME (
+					  GAME_ID
+					, ROOM_ID
+					, BAG_COUNT
+					, WINNING_INDEX
+					, CURRENT_PARTICIPANT_ID
+					, TURN_DEADLINE
+					)
+		VALUES
+			   (
+				 SEQ_GAME.NEXTVAL
+			   , #{roomId}
+			   , #{bagCount}
+			   , #{winningIndex}
+			   , #{currentParticipantId}
+			   , SYSTIMESTAMP + NUMTODSINTERVAL(#{turnSeconds}, 'SECOND')
+			   )
+	</insert>
+
+	<insert id="insertGameParticipantList">
+		BEGIN
+		<foreach collection="list" item="player">
+			INSERT
+			  INTO
+				   GAME_PARTICIPANT (
+									  GAME_PARTICIPANT_ID
+									, GAME_ID
+									, PARTICIPANT_ID
+									, TURN_ORDER
+									)
+			VALUES
+				   (
+					 SEQ_GAME_PARTICIPANT.NEXTVAL
+				   , (
+					   SELECT
+							  GAME_ID
+						 FROM
+							  GAME
+						WHERE
+							  ROOM_ID = #{player.roomId}
+					 )
+				   , #{player.participantId}
+				   , #{player.turnOrder}
+				   );
+		</foreach>
+		END;
+	</insert>
+
+	<insert id="insertGamePick" parameterType="GamePick">
+		INSERT
+		  INTO
+			   GAME_PICK (
+						   PICK_ID
+						 , GAME_ID
+						 , GAME_PARTICIPANT_ID
+						 , BAG_INDEX
+						 )
+		VALUES
+			   (
+				 SEQ_GAME_PICK.NEXTVAL
+			   , (
+				   SELECT
+						  GAME_ID
+					 FROM
+						  GAME
+					WHERE
+						  ROOM_ID = #{roomId}
+				 )
+			   , (
+				   SELECT
+						  GAME_PARTICIPANT_ID
+					 FROM
+						  GAME_PARTICIPANT
+					WHERE
+						  PARTICIPANT_ID = #{participantId}
+				 )
+			   , #{bagIndex}
+			   )
+	</insert>
+
+	<sql id="gameColumns">
+			   G.STATUS
+			 , G.BAG_COUNT
+			 , G.TURN_SEQ
+			 , G.CURRENT_PARTICIPANT_ID
+			 , G.CONSECUTIVE_TIMEOUTS
+			 , CASE
+				 WHEN G.TURN_DEADLINE IS NULL      THEN 'N'
+				 WHEN G.TURN_DEADLINE <![CDATA[<=]]> SYSTIMESTAMP THEN 'Y'
+				 ELSE 'N'
+			   END AS IS_EXPIRED
+	</sql>
+
+	<!-- 이 방의 게임을 잠근다. 동시에 들어온 선택·만료·이탈이 서로 섞이지 않게 하는 유일한 지점이다. -->
+	<select id="findGameForUpdate" parameterType="long" resultType="GameQueryDto">
+		SELECT
+		<include refid="gameColumns" />
+		  FROM
+			   GAME G
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+		   FOR UPDATE
+	</select>
+
+	<select id="findGame" parameterType="long" resultType="GameQueryDto">
+		SELECT
+		<include refid="gameColumns" />
+		  FROM
+			   GAME G
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+	</select>
+
+	<!--
+		당첨 위치는 게임이 끝난 뒤에만 내보낸다. 자바로 한 번도 읽지 않고 이 CASE 로만 노출하므로
+		나중에 누가 DTO 를 손봐도 진행 중에 당첨 위치가 새어나갈 수 없다.
+		남은 시간도 DB 시계로 계산한다. 브라우저가 계산하면 기기 시계 오차가 그대로 게임에 반영된다.
+	-->
+	<select id="findGameStatus" parameterType="long" resultType="GameStatusDto">
+		SELECT
+			   G.STATUS
+			 , G.BAG_COUNT
+			 , G.TURN_SEQ
+			 , G.CURRENT_PARTICIPANT_ID
+			 , CASE
+				 WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX
+			   END AS WINNING_INDEX
+			 , GREATEST(0, CEIL((CAST(G.TURN_DEADLINE AS DATE) - CAST(SYSTIMESTAMP AS DATE)) * 86400)) AS REMAINING_SECONDS
+			 , (
+				 SELECT
+						GP.PARTICIPANT_ID
+				   FROM
+						GAME_PARTICIPANT GP
+				  WHERE
+						GP.GAME_ID = G.GAME_ID
+					AND GP.IS_WINNER = 'Y'
+			   ) AS WINNER_PARTICIPANT_ID
+		  FROM
+			   GAME G
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+	</select>
+
+	<select id="findGamePlayerList" parameterType="long" resultType="GamePlayerResponseDto">
+		SELECT
+			   P.PARTICIPANT_ID
+			 , P.NICKNAME
+			 , P.IS_HOST
+			 , GP.TURN_ORDER
+			 , CASE
+				 WHEN GP.LEFT_AT IS NULL THEN 'N'
+				 ELSE 'Y'
+			   END AS IS_LEFT
+			 , GP.IS_WINNER
+		  FROM
+			   GAME_PARTICIPANT GP
+		  JOIN
+			   GAME G
+			ON
+			   G.GAME_ID = GP.GAME_ID
+		  JOIN
+			   PARTICIPANT P
+			ON
+			   P.PARTICIPANT_ID = GP.PARTICIPANT_ID
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+		 ORDER
+			BY
+			   GP.TURN_ORDER
+	</select>
+
+	<select id="findGamePickList" parameterType="long" resultType="GamePickResponseDto">
+		SELECT
+			   GPK.BAG_INDEX
+			 , GP.PARTICIPANT_ID
+			 , CASE
+				 WHEN GPK.BAG_INDEX = G.WINNING_INDEX THEN 'Y'
+				 ELSE 'N'
+			   END AS IS_WINNER
+		  FROM
+			   GAME_PICK GPK
+		  JOIN
+			   GAME G
+			ON
+			   G.GAME_ID = GPK.GAME_ID
+		  JOIN
+			   GAME_PARTICIPANT GP
+			ON
+			   GP.GAME_PARTICIPANT_ID = GPK.GAME_PARTICIPANT_ID
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+		 ORDER
+			BY
+			   GPK.BAG_INDEX
+	</select>
+
+	<select id="findActiveParticipantIdList" parameterType="long" resultType="long">
+		SELECT
+			   GP.PARTICIPANT_ID
+		  FROM
+			   GAME_PARTICIPANT GP
+		  JOIN
+			   GAME G
+			ON
+			   G.GAME_ID = GP.GAME_ID
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+		   AND GP.LEFT_AT IS NULL
+		 ORDER
+			BY
+			   GP.TURN_ORDER
+	</select>
+
+	<!-- 승자가 식당을 고르지 않았을 수 있어 LEFT JOIN 이다. 그 경우 RESTAURANT_ID 는 null 로 온다. -->
+	<select id="findGameWinner" parameterType="long" resultType="GameWinnerQueryDto">
+		SELECT
+			   GP.GAME_PARTICIPANT_ID
+			 , GP.PARTICIPANT_ID
+			 , S.RESTAURANT_ID
+		  FROM
+			   GAME_PARTICIPANT GP
+		  JOIN
+			   GAME G
+			ON
+			   G.GAME_ID = GP.GAME_ID
+		  LEFT
+		  JOIN
+			   SELECTION S
+			ON
+			   S.PARTICIPANT_ID = GP.PARTICIPANT_ID
+		 WHERE
+			   G.ROOM_ID = #{roomId}
+		   AND GP.IS_WINNER = 'Y'
+	</select>
+
+	<!-- 내 차례이고 아직 마감 전일 때만 넘어간다. 조건이 어긋나면 0행이 되어 호출한 쪽이 거절한다. -->
+	<update id="updateTurnByPick">
+		UPDATE
+			   GAME
+		   SET
+			   TURN_SEQ = TURN_SEQ + 1
+			 , CURRENT_PARTICIPANT_ID = #{nextParticipantId}
+			 , TURN_DEADLINE = SYSTIMESTAMP + NUMTODSINTERVAL(#{turnSeconds}, 'SECOND')
+			 , CONSECUTIVE_TIMEOUTS = 0
+		 WHERE
+			   ROOM_ID = #{roomId}
+		   AND STATUS = 'PLAYING'
+		   AND CURRENT_PARTICIPANT_ID = #{participantId}
+		   AND TURN_DEADLINE <![CDATA[>]]> SYSTIMESTAMP
+	</update>
+
+	<!--
+		만료 알림은 누구나 보낼 수 있다. TURN_SEQ 와 마감 시각을 함께 확인하므로
+		여러 명이 동시에 보내도 첫 요청만 반영되고, 일찍 보내면 0행이 되어 무시된다.
+	-->
+	<update id="updateTurnByTimeout">
+		UPDATE
+			   GAME
+		   SET
+			   TURN_SEQ = TURN_SEQ + 1
+			 , CURRENT_PARTICIPANT_ID = #{nextParticipantId}
+			 , TURN_DEADLINE = SYSTIMESTAMP + NUMTODSINTERVAL(#{turnSeconds}, 'SECOND')
+			 , CONSECUTIVE_TIMEOUTS = CONSECUTIVE_TIMEOUTS + 1
+		 WHERE
+			   ROOM_ID = #{roomId}
+		   AND STATUS = 'PLAYING'
+		   AND TURN_SEQ = #{turnSeq}
+		   AND TURN_DEADLINE <![CDATA[<=]]> SYSTIMESTAMP
+	</update>
+
+	<!--
+		나감·끊김으로 차례를 넘길 때 쓴다. 마감 전이라도 넘겨야 하므로 TURN_DEADLINE 조건이 없다.
+		대신 CURRENT_PARTICIPANT_ID 를 확인해 남의 차례를 건드리지 못하게 한다.
+	-->
+	<update id="updateTurnByLeave">
+		UPDATE
+			   GAME
+		   SET
+			   TURN_SEQ = TURN_SEQ + 1
+			 , CURRENT_PARTICIPANT_ID = #{nextParticipantId}
+			 , TURN_DEADLINE = SYSTIMESTAMP + NUMTODSINTERVAL(#{turnSeconds}, 'SECOND')
+			 , CONSECUTIVE_TIMEOUTS = 0
+		 WHERE
+			   ROOM_ID = #{roomId}
+		   AND STATUS = 'PLAYING'
+		   AND CURRENT_PARTICIPANT_ID = #{participantId}
+	</update>
+
+	<!-- 당첨 여부 판정. 값을 자바로 꺼내지 않고 여기서 비교해 영향 행 수로만 알려준다. -->
+	<update id="updateGameFinished">
+		UPDATE
+			   GAME
+		   SET
+			   STATUS = 'FINISHED'
+			 , CURRENT_PARTICIPANT_ID = NULL
+			 , TURN_DEADLINE = NULL
+			 , FINISHED_AT = SYSTIMESTAMP
+		 WHERE
+			   ROOM_ID = #{roomId}
+		   AND STATUS = 'PLAYING'
+		   AND WINNING_INDEX = #{bagIndex}
+	</update>
+
+	<update id="updateGameAborted" parameterType="long">
+		UPDATE
+			   GAME
+		   SET
+			   STATUS = 'ABORTED'
+			 , CURRENT_PARTICIPANT_ID = NULL
+			 , TURN_DEADLINE = NULL
+			 , FINISHED_AT = SYSTIMESTAMP
+		 WHERE
+			   ROOM_ID = #{roomId}
+		   AND STATUS = 'PLAYING'
+	</update>
+
+	<update id="updateGameWinner" parameterType="long">
+		UPDATE
+			   GAME_PARTICIPANT
+		   SET
+			   IS_WINNER = 'Y'
+		 WHERE
+			   PARTICIPANT_ID = #{participantId}
+	</update>
+
+	<!-- 이미 나간 사람에게 다시 찍지 않는다. 그래야 재접속·중복 알림에도 결과가 같다. -->
+	<update id="updateGameParticipantLeft" parameterType="long">
+		UPDATE
+			   GAME_PARTICIPANT
+		   SET
+			   LEFT_AT = SYSTIMESTAMP
+		 WHERE
+			   PARTICIPANT_ID = #{participantId}
+		   AND LEFT_AT IS NULL
+	</update>
+
+	<delete id="deleteGame" parameterType="long">
+		DELETE
+		  FROM
+			   GAME
+		 WHERE
+			   ROOM_ID = #{roomId}
+	</delete>
+
+</mapper>

@@ -16,7 +16,7 @@
 				 SEQ_ROOM_RESULT.NEXTVAL
 			   , #{roomId}
 			   , #{restaurantId}
-			   , NULL
+			   , #{gameParticipantId,jdbcType=NUMERIC}
 			   )
 	</insert>
 

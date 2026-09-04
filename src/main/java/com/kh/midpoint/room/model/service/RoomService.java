@@ -61,6 +61,7 @@ public class RoomService {
 				&& !"MODE_SELECTED".equals(stage)
 				&& !"MIDPOINT_FOUND".equals(stage)
 				&& !"RESOLVING".equals(stage)
+				&& !"GAME_PLAYING".equals(stage)
 				&& !"RESOLVED".equals(stage)) {
 			throw new InvalidStateException("올바르지 않은 방 상태입니다: " + stage);
 		}
