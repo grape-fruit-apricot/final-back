@@ -36,6 +36,17 @@ public class RoomService {
 		return responseDto;
 	}
 
+	// 같은 방을 동시에 바꾸는 작업(투표 집계, 게임 시작)을 직렬화하기 위해 방 행을 잠근다.
+	// 잠금은 트랜잭션이 끝날 때 풀리므로 호출하는 쪽이 쓰기 트랜잭션이어야 한다.
+	@Transactional
+	public RoomResponseDto findRoomForUpdate(String roomUuid) {
+		RoomResponseDto responseDto = roomMapper.findRoomForUpdate(roomUuid);
+		if (responseDto == null) {
+			throw new NotFoundException("존재하지 않는 방입니다: " + roomUuid);
+		}
+		return responseDto;
+	}
+
 	@Transactional
 	public void updateMidpoint(Long roomId, Double lat, Double lng, String source) {
 		Room room = Room.builder()

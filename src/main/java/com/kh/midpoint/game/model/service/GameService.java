@@ -43,6 +43,8 @@ public class GameService {
 	private static final String STAGE_RESOLVING = "RESOLVING";
 	private static final String STAGE_GAME_PLAYING = "GAME_PLAYING";
 
+	// 잠금 순서는 항상 ROOM -> GAME 으로 고정한다. 게임 진행 중에도 방 상태(stage)를 바꾸므로
+	// 순서가 뒤집힌 경로가 하나라도 있으면 투표·게임시작과 맞물려 교착이 날 수 있다.
 	private final GameMapper gameMapper;
 	private final RoomService roomService;
 	private final ParticipantService participantService;
@@ -72,7 +74,9 @@ public class GameService {
 	public GameStatusDto insertGame(String roomUuid, Long participantId) {
 		participantService.validateHost(roomUuid, participantId);
 
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		// 방을 잠그고 시작한다. 시작 버튼이 연달아 눌려도 게임이 두 번 만들어지지 않는다
+		// (UK_GAME_ROOM 이 막아주긴 하지만, 그 경우 제약 위반 문구가 그대로 나간다).
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		validateGameStart(room);
 		validateRestartable(room.getRoomId());
 
@@ -97,7 +101,7 @@ public class GameService {
 
 	@Transactional
 	public GameStatusDto insertGamePick(String roomUuid, Long participantId, GamePickRequestDto requestDto) {
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		GameQueryDto game = findPlayingGameForUpdate(room.getRoomId());
 
 		validateMyTurn(game, participantId);
@@ -127,7 +131,7 @@ public class GameService {
 	// 마감이 지난 차례를 다음 사람에게 넘긴다. 누가 몇 번을 불러도 결과가 같다.
 	@Transactional
 	public GameStatusDto updateTurnExpired(String roomUuid, Integer turnSeq) {
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		GameQueryDto game = gameMapper.findGameForUpdate(room.getRoomId());
 		if (game == null || !STATUS_PLAYING.equals(game.getStatus())) {
 			return findGameStatus(roomUuid);
@@ -156,7 +160,7 @@ public class GameService {
 	// 나가기 버튼으로 게임에서 빠진다. 참가자 행은 지우지 않고 이탈 시각만 남긴다(BR-18).
 	@Transactional
 	public GameStatusDto updateGameParticipantLeft(String roomUuid, Long participantId) {
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		GameQueryDto game = gameMapper.findGameForUpdate(room.getRoomId());
 		if (game == null || !STATUS_PLAYING.equals(game.getStatus())) {
 			return findGameStatus(roomUuid);
@@ -179,11 +183,20 @@ public class GameService {
 	@Transactional
 	public GameStatusDto updateTurnBySkip(String roomUuid, Long participantId) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		GameQueryDto game = gameMapper.findGameForUpdate(room.getRoomId());
-		if (game == null || !STATUS_PLAYING.equals(game.getStatus())) {
+
+		// 이 메서드는 연결이 끊길 때마다 불린다. 채팅 탭을 오가기만 해도 끊기므로
+		// 대부분은 게임과 무관하다. 잠그기 전에 값싼 조회로 먼저 걸러낸다.
+		GameQueryDto game = gameMapper.findGame(room.getRoomId());
+		if (game == null || !STATUS_PLAYING.equals(game.getStatus())
+				|| !participantId.equals(game.getCurrentParticipantId())) {
 			return null;
 		}
-		if (!participantId.equals(game.getCurrentParticipantId())) {
+
+		// 여기서부터는 실제로 바꿔야 하므로 ROOM -> GAME 순서로 잠근다.
+		roomService.findRoomForUpdate(roomUuid);
+		game = gameMapper.findGameForUpdate(room.getRoomId());
+		if (game == null || !STATUS_PLAYING.equals(game.getStatus())
+				|| !participantId.equals(game.getCurrentParticipantId())) {
 			return null;
 		}
 

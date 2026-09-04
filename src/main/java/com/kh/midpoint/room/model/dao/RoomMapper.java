@@ -15,4 +15,7 @@ public interface RoomMapper {
 
 	RoomResponseDto findRoom(String roomUuid);
 
+	// 방 행을 잠가서 읽는다. 같은 방에 동시에 들어온 변경을 한 줄로 세우는 지점이다.
+	RoomResponseDto findRoomForUpdate(String roomUuid);
+
 }
