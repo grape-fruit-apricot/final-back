@@ -3,7 +3,6 @@ package com.kh.midpoint.point.model.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.external.kakao.NearbyStationDto;
