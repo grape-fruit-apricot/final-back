@@ -60,6 +60,12 @@ public class ParticipantController {
 	@DeleteMapping("/{participantId}")
 	public ResponseEntity<Void> leave(@PathVariable("roomUuid") String roomUuid, @PathVariable("participantId") Long participantId) {
 		participantService.deleteParticipant(roomUuid, participantId);
+
+		// 나간 사실을 알리지 않으면 남은 사람들의 참가자 목록에 계속 남아 있는다.
+		// 준비 상태 변경과 같은 토픽을 쓴다(프론트가 목록을 통째로 갈아끼우는 방식이라 그대로 맞는다).
+		messagingTemplate.convertAndSend("/topic/room/" + roomUuid + "/participants/ready",
+				participantService.findParticipantList(roomUuid));
+
 		return ResponseEntity.noContent().build();
 	}
 

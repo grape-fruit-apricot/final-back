@@ -55,6 +55,13 @@ public class RouteService {
 	// 저장은 참가자 1명 단위로 transactionTemplate 안에서 짧게 끊는다.
 	public RouteResponseDto findRoute(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
+		// 게임이 도는 중에는 결과를 확정하지 않는다. 이게 없으면 방장이 무작위 우회를 눌러
+		// 참가자들이 주머니를 고르는 도중에 결과를 가로챌 수 있다.
+		// 게임이 끝나거나 중단되면 RESOLVING 으로 돌아오므로 그때부터 확정할 수 있다.
+		if ("GAME_PLAYING".equals(room.getStage())) {
+			throw new InvalidStateException("게임이 진행 중입니다.");
+		}
+
 		List<ParticipantResponseDto> participants = participantService.findParticipantList(roomUuid);
 		RestaurantResponseDto restaurant = findRestaurant(roomUuid, room.getRoomId());
 

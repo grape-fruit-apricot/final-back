@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kh.midpoint.common.exception.ForbiddenException;
+import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.participant.model.dao.ParticipantMapper;
 import com.kh.midpoint.participant.model.dto.JoinRoomRequestDto;
@@ -44,6 +45,7 @@ public class ParticipantService {
 	@Transactional
 	public void deleteParticipant(String roomUuid, Long participantId) {
 		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
+		validateNotPlayingGame(roomUuid);
 
 		participantMapper.deleteParticipant(participantId);
 
@@ -88,6 +90,15 @@ public class ParticipantService {
 			throw new NotFoundException("존재하지 않는 참가자입니다: " + participantId);
 		}
 		return participant;
+	}
+
+	// 게임 중에는 참가자 행을 지우지 않는다. FK 가 전부 ON DELETE CASCADE 라
+	// 지우는 순간 GAME_PARTICIPANT·GAME_PICK·SELECTION 까지 함께 사라져 게임이 깨진다.
+	// 게임 중 이탈은 GAME_PARTICIPANT.LEFT_AT 을 남기는 소켓 경로(/app/game/leave)로 처리한다.
+	private void validateNotPlayingGame(String roomUuid) {
+		if ("GAME_PLAYING".equals(roomService.findRoom(roomUuid).getStage())) {
+			throw new InvalidStateException("게임이 진행 중이라 나갈 수 없습니다.");
+		}
 	}
 
 	private boolean isHost(ParticipantResponseDto participant) {

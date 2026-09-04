@@ -38,7 +38,8 @@ public class ModeVoteService {
 	public ModeVoteStatusDto startModeVote(String roomUuid, Long participantId) {
 		participantService.validateHost(roomUuid, participantId);
 
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		// 투표를 다시 여는 동안 누가 표를 던지면 지워질 표가 섞인다. 방을 잠그고 처리한다.
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		validateMidpointFound(room);
 
 		modeVoteMapper.deleteModeVoteList(roomUuid);
@@ -51,7 +52,9 @@ public class ModeVoteService {
 	public ModeVoteStatusDto insertModeVote(String roomUuid, Long participantId, ModeVoteRequestDto requestDto) {
 		participantService.validateParticipant(roomUuid, participantId);
 
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		// 방을 잠그고 표를 넣는다. 이게 없으면 동시에 던진 표들이 서로의 커밋을 보지 못해
+		// 아무도 마지막 한 명이 되지 못하고, 전원이 투표했는데도 방식이 정해지지 않는다.
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		validateVoteOpen(room);
 		validateVoteMode(requestDto.getVoteMode());
 
@@ -63,7 +66,7 @@ public class ModeVoteService {
 
 		ModeVoteStatusDto status = findModeVoteStatus(roomUuid);
 
-		// 게임은 아직 없어서 결과를 만들 수 없다. RESOLVING 으로 두고 게임이 붙을 자리를 남긴다.
+		// 게임으로 정해지면 방장이 게임을 시작할 수 있는 상태로 둔다(GameService 가 여기서 이어받는다).
 		// 무작위는 이어서 경로 확정(RouteService)이 돌면서 RESOLVED 로 바꾼다.
 		if (MODE_GAME.equals(status.getDecidedMode())) {
 			roomService.updateStage(room.getRoomId(), "RESOLVING");
