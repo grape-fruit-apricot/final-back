@@ -155,22 +155,19 @@ public class RouteService {
 				.map(route -> findRouteKey(route.getParticipantId(), route.getTravelMode()))
 				.collect(Collectors.toCollection(HashSet::new));
 
-		boolean inserted = false;
 		for (ParticipantResponseDto participant : participants) {
-			inserted |= insertMissingRoute(
-					roomId, participant, restaurant, walkMode, savedRouteKeys);
-			inserted |= insertMissingRoute(
-					roomId, participant, restaurant, transitMode, savedRouteKeys);
+			insertMissingRoute(roomId, participant, restaurant, walkMode, savedRouteKeys);
+			insertMissingRoute(roomId, participant, restaurant, transitMode, savedRouteKeys);
 		}
 
-		return inserted ? routeMapper.findRouteList(roomId, null) : savedRoutes;
+		return routeMapper.findRouteList(roomId, null);
 	}
 
-	private boolean insertMissingRoute(Long roomId, ParticipantResponseDto participant,
+	private void insertMissingRoute(Long roomId, ParticipantResponseDto participant,
 			RestaurantResponseDto restaurant, String travelMode, Set<String> savedRouteKeys) {
 		String routeKey = findRouteKey(participant.getParticipantId(), travelMode);
 		if (savedRouteKeys.contains(routeKey)) {
-			return false;
+			return;
 		}
 
 		try {
@@ -180,10 +177,8 @@ public class RouteService {
 			transactionTemplate.executeWithoutResult(status -> insertRoute(
 					roomId, participant.getParticipantId(), travelMode, route));
 			savedRouteKeys.add(routeKey);
-			return true;
 		} catch (RuntimeException e) {
 			log.warn("참가자 {} {} 경로 생성 실패", participant.getParticipantId(), travelMode, e);
-			return false;
 		}
 	}
 
