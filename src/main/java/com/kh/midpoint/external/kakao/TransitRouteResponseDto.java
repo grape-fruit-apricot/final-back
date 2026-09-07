@@ -2,7 +2,8 @@ package com.kh.midpoint.external.kakao;
 
 import java.util.List;
 
-import com.kh.midpoint.external.tmap.RoutePointDto;
+import com.kh.midpoint.route.model.dto.RoutePointDto;
+import com.kh.midpoint.route.model.dto.RouteSegmentDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,5 +20,6 @@ public class TransitRouteResponseDto {
 
 	private Integer timeMinutes;
 	private List<RoutePointDto> points;
+	private List<RouteSegmentDto> segments;
 
 }

@@ -2,11 +2,8 @@ package com.kh.midpoint.route.model.service;
 
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
-import com.kh.midpoint.external.kakao.KakaoLocalClient;
 import com.kh.midpoint.external.kakao.KakaoTransitClient;
-import com.kh.midpoint.external.kakao.NearbyStationDto;
 import com.kh.midpoint.external.kakao.TransitRouteResponseDto;
-import com.kh.midpoint.external.tmap.RoutePointDto;
 import com.kh.midpoint.external.tmap.TmapRouteClient;
 import com.kh.midpoint.external.tmap.TmapRouteDto;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
@@ -21,9 +18,12 @@ import com.kh.midpoint.route.model.dao.RouteMapper;
 import com.kh.midpoint.route.model.dto.ParticipantRouteQueryDto;
 import com.kh.midpoint.route.model.dto.ParticipantRouteResponseDto;
 import com.kh.midpoint.route.model.dto.RoutePointQueryDto;
+import com.kh.midpoint.route.model.dto.RoutePointDto;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
+import com.kh.midpoint.route.model.dto.RouteSegmentDto;
 import com.kh.midpoint.route.model.vo.ParticipantRoute;
 import com.kh.midpoint.route.model.vo.ParticipantRoutePoint;
+import com.kh.midpoint.route.model.vo.ParticipantRouteSegment;
 import com.kh.midpoint.selection.model.dto.SelectionResponseDto;
 import com.kh.midpoint.selection.model.service.SelectionService;
 import lombok.RequiredArgsConstructor;
@@ -53,9 +53,6 @@ public class RouteService {
 	@Value("${route.mode.transit}")
 	private String transitMode;
 
-	@Value("${route.transit.station-count}")
-	private int transitStationCount;
-
 	private final RoomService roomService;
 	private final ParticipantService participantService;
 	private final SelectionService selectionService;
@@ -63,7 +60,6 @@ public class RouteService {
 	private final RoomResultService roomResultService;
 	private final RouteMapper routeMapper;
 	private final TmapRouteClient tmapRouteClient;
-	private final KakaoLocalClient kakaoLocalClient;
 	private final KakaoTransitClient kakaoTransitClient;
 	private final TransactionTemplate transactionTemplate;
 
@@ -148,8 +144,7 @@ public class RouteService {
 
 	// 저장을 마친 뒤의 경로 목록을 돌려준다. 새로 넣은 행의 ROUTE_ID 는 알 수 없어 다시 조회해야
 	// 하지만, 이미 확정된 방을 다시 부르는 경우에는 처음 조회한 결과를 그대로 재사용한다.
-	private List<ParticipantRouteQueryDto> insertMissingRouteList(Long roomId,
-			List<ParticipantResponseDto> participants, RestaurantResponseDto restaurant) {
+	private List<ParticipantRouteQueryDto> insertMissingRouteList(Long roomId, List<ParticipantResponseDto> participants, RestaurantResponseDto restaurant) {
 		List<ParticipantRouteQueryDto> savedRoutes = routeMapper.findRouteList(roomId, null);
 		Set<String> savedRouteKeys = savedRoutes.stream()
 				.map(route -> findRouteKey(route.getParticipantId(), route.getTravelMode()))
@@ -163,8 +158,7 @@ public class RouteService {
 		return routeMapper.findRouteList(roomId, null);
 	}
 
-	private void insertMissingRoute(Long roomId, ParticipantResponseDto participant,
-			RestaurantResponseDto restaurant, String travelMode, Set<String> savedRouteKeys) {
+	private void insertMissingRoute(Long roomId, ParticipantResponseDto participant, RestaurantResponseDto restaurant, String travelMode, Set<String> savedRouteKeys) {
 		String routeKey = findRouteKey(participant.getParticipantId(), travelMode);
 		if (savedRouteKeys.contains(routeKey)) {
 			return;
@@ -182,34 +176,59 @@ public class RouteService {
 		}
 	}
 
-	private TmapRouteDto findWalkRoute(ParticipantResponseDto participant,
-			RestaurantResponseDto restaurant) {
+	private TmapRouteDto findWalkRoute(ParticipantResponseDto participant, RestaurantResponseDto restaurant) {
 		return tmapRouteClient.getPedestrianRoute(
 				participant.getPrefLng(), participant.getPrefLat(),
 				restaurant.getLng(), restaurant.getLat());
 	}
 
-	private TmapRouteDto findTransitRoute(ParticipantResponseDto participant,
-			RestaurantResponseDto restaurant) {
-		List<NearbyStationDto> stations = kakaoLocalClient.findNearbySubwayStations(
-				participant.getPrefLng(), participant.getPrefLat(), transitStationCount);
-		validateNearbyStationList(stations);
+	private TmapRouteDto findTransitRoute(ParticipantResponseDto participant, RestaurantResponseDto restaurant) {
+		TransitRouteResponseDto transitRoute = kakaoTransitClient.findTransitRoute(
+				participant.getPrefLng(), participant.getPrefLat(),
+				restaurant.getLng(), restaurant.getLat());
+		if (transitRoute.getPoints().isEmpty()) {
+			throw new NotFoundException("대중교통 경로 좌표를 찾지 못했습니다.");
+		}
 
-		NearbyStationDto station = stations.get(0);
-		TransitRouteResponseDto route = kakaoTransitClient.findTransitRoute(
-				station.getLng(), station.getLat(), restaurant.getLng(), restaurant.getLat());
-		return new TmapRouteDto(route.getTimeMinutes(), route.getPoints());
+		List<RouteSegmentDto> segments = new ArrayList<>();
+		int timeMinutes = transitRoute.getTimeMinutes();
+
+		RoutePointDto boardingPoint = transitRoute.getPoints().get(0);
+		TmapRouteDto boardingRoute = tmapRouteClient.getPedestrianRoute(
+				participant.getPrefLng(), participant.getPrefLat(),
+				boardingPoint.getLng(), boardingPoint.getLat());
+		timeMinutes += boardingRoute.getTimeMinutes();
+		addRouteSegmentList(segments, boardingRoute.getSegments());
+
+		addRouteSegmentList(segments, transitRoute.getSegments());
+
+		RoutePointDto alightingPoint = transitRoute.getPoints()
+				.get(transitRoute.getPoints().size() - 1);
+		TmapRouteDto destinationRoute = tmapRouteClient.getPedestrianRoute(
+				alightingPoint.getLng(), alightingPoint.getLat(),
+				restaurant.getLng(), restaurant.getLat());
+		timeMinutes += destinationRoute.getTimeMinutes();
+		addRouteSegmentList(segments, destinationRoute.getSegments());
+
+		List<RoutePointDto> points = segments.stream()
+				.flatMap(segment -> segment.getPoints().stream())
+				.toList();
+		return new TmapRouteDto(timeMinutes, points, segments);
 	}
 
-	private void validateNearbyStationList(List<NearbyStationDto> stations) {
-		if (stations.isEmpty()) {
-			throw new NotFoundException("참가자 주변의 지하철역을 찾지 못했습니다.");
+	private void addRouteSegmentList(List<RouteSegmentDto> target,
+			List<RouteSegmentDto> source) {
+		for (RouteSegmentDto segment : source) {
+			target.add(new RouteSegmentDto(
+					target.size(), segment.getSegmentType(), segment.getTimeMinutes(),
+					segment.getGuidance(), segment.getVehicles(), segment.getPoints()));
 		}
 	}
 
-	private void insertRoute(Long roomId, Long participantId, String travelMode,
-			TmapRouteDto route) {
+	private void insertRoute(Long roomId, Long participantId, String travelMode, TmapRouteDto route) {
+		Long routeId = routeMapper.findNextRouteId();
 		ParticipantRoute participantRoute = ParticipantRoute.builder()
+				.routeId(routeId)
 				.roomId(roomId)
 				.participantId(participantId)
 				.travelMode(travelMode)
@@ -217,37 +236,80 @@ public class RouteService {
 				.build();
 		routeMapper.insertRoute(participantRoute);
 
-		List<ParticipantRoutePoint> routePoints = new ArrayList<>();
-		for (int index = 0; index < route.getPoints().size(); index++) {
-			routePoints.add(ParticipantRoutePoint.builder()
-					.roomId(roomId)
-					.participantId(participantId)
-					.travelMode(travelMode)
-					.pointOrder(index)
-					.lat(route.getPoints().get(index).getLat())
-					.lng(route.getPoints().get(index).getLng())
-					.build());
+		for (RouteSegmentDto segment : route.getSegments()) {
+			Long routeSegmentId = routeMapper.findNextRouteSegmentId();
+			ParticipantRouteSegment participantRouteSegment = ParticipantRouteSegment.builder()
+					.routeSegmentId(routeSegmentId)
+					.routeId(routeId)
+					.segmentOrder(segment.getSegmentOrder())
+					.segmentType(segment.getSegmentType())
+					.timeMinutes(segment.getTimeMinutes())
+					.guidance(segment.getGuidance())
+					.vehicles(findVehicleText(segment.getVehicles()))
+					.build();
+			routeMapper.insertRouteSegment(participantRouteSegment);
+
+			List<ParticipantRoutePoint> routePoints = new ArrayList<>();
+			int pointOrder = 0;
+			for (RoutePointDto point : segment.getPoints()) {
+				routePoints.add(ParticipantRoutePoint.builder()
+						.routeSegmentId(routeSegmentId)
+						.pointOrder(pointOrder)
+						.lat(point.getLat())
+						.lng(point.getLng())
+						.build());
+				pointOrder++;
+			}
+			if (!routePoints.isEmpty()) {
+				routeMapper.insertRoutePointList(routePoints);
+			}
 		}
-		routeMapper.insertRoutePointList(routePoints);
 	}
 
-	private List<ParticipantRouteResponseDto> findParticipantRouteList(Long roomId,
-			List<ParticipantRouteQueryDto> routes) {
+	private String findVehicleText(List<String> vehicles) {
+		return vehicles == null || vehicles.isEmpty() ? null : String.join(",", vehicles);
+	}
+
+	private List<ParticipantRouteResponseDto> findParticipantRouteList(Long roomId, List<ParticipantRouteQueryDto> routes) {
 		// 경로마다 좌표를 따로 조회하면 참가자 수만큼 쿼리가 늘어난다. 도보 폴리라인은
 		// 경로당 좌표가 수백 개라 방 단위로 한 번에 가져와 routeId 로 나눈다.
-		Map<Long, List<RoutePointDto>> pointsByRouteId = routeMapper.findRoutePointListByRoom(roomId).stream()
-				.collect(Collectors.groupingBy(RoutePointQueryDto::getRouteId, LinkedHashMap::new,
-						Collectors.mapping(point -> new RoutePointDto(point.getLat(), point.getLng()),
-								Collectors.toList())));
+		Map<Long, List<RouteSegmentDto>> segmentsByRouteId = findSegmentsByRouteId(roomId);
 
 		return routes.stream()
-				.map(route -> new ParticipantRouteResponseDto(
-						route.getParticipantId(),
-						route.getNickname(),
-						route.getTravelMode(),
-						route.getTimeMinutes(),
-						pointsByRouteId.getOrDefault(route.getRouteId(), List.of())))
+				.map(route -> toParticipantRouteResponse(route, segmentsByRouteId.getOrDefault(route.getRouteId(), List.of())))
 				.toList();
+	}
+
+	private Map<Long, List<RouteSegmentDto>> findSegmentsByRouteId(Long roomId) {
+		Map<Long, Map<Long, RouteSegmentDto>> segmentsByRouteAndId = new LinkedHashMap<>();
+		for (RoutePointQueryDto point : routeMapper.findRoutePointListByRoom(roomId)) {
+			RouteSegmentDto segment = segmentsByRouteAndId
+					.computeIfAbsent(point.getRouteId(), routeId -> new LinkedHashMap<>())
+					.computeIfAbsent(point.getRouteSegmentId(), routeSegmentId ->
+							new RouteSegmentDto(
+									point.getSegmentOrder(), point.getSegmentType(),
+									point.getSegmentTimeMinutes(), point.getGuidance(),
+									findVehicleList(point.getVehicles()), new ArrayList<>()));
+			segment.getPoints().add(new RoutePointDto(point.getLat(), point.getLng()));
+		}
+
+		Map<Long, List<RouteSegmentDto>> segmentsByRouteId = new LinkedHashMap<>();
+		segmentsByRouteAndId.forEach((routeId, segmentsById) ->
+				segmentsByRouteId.put(routeId, new ArrayList<>(segmentsById.values())));
+		return segmentsByRouteId;
+	}
+
+	private List<String> findVehicleList(String vehicles) {
+		return vehicles == null || vehicles.isBlank()
+				? List.of()
+				: List.of(vehicles.split(","));
+	}
+
+	private ParticipantRouteResponseDto toParticipantRouteResponse(ParticipantRouteQueryDto route, List<RouteSegmentDto> segments) {
+		List<RoutePointDto> points = segments.stream()
+				.flatMap(segment -> segment.getPoints().stream())
+				.toList();
+		return new ParticipantRouteResponseDto(route.getParticipantId(), route.getNickname(), route.getTravelMode(), route.getTimeMinutes(), points, segments);
 	}
 
 	private void validateTravelMode(String travelMode) {

@@ -27,6 +27,10 @@ public class MidPointFinder {
 
 	public NearbyStationDto findMidPoint(List<ParticipantResponseDto> participants) {
 		validateParticipantList(participants);
+		if (participants.size() == 1) {
+			ParticipantResponseDto participant = participants.get(0);
+			return new NearbyStationDto(centerName, participant.getPrefLat(), participant.getPrefLng());
+		}
 
 		double centroidLat = participants.stream()
 				.mapToDouble(ParticipantResponseDto::getPrefLat)

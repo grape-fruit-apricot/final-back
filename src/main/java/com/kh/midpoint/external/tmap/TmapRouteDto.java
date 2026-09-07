@@ -1,5 +1,8 @@
 package com.kh.midpoint.external.tmap;
 
+import com.kh.midpoint.route.model.dto.RoutePointDto;
+import com.kh.midpoint.route.model.dto.RouteSegmentDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,4 +19,5 @@ import java.util.List;
 public class TmapRouteDto {
 	private int timeMinutes;
 	private List<RoutePointDto> points;
+	private List<RouteSegmentDto> segments;
 }

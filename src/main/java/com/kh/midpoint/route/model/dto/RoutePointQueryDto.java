@@ -16,6 +16,12 @@ import lombok.ToString;
 public class RoutePointQueryDto {
 
 	private Long routeId;
+	private Long routeSegmentId;
+	private Integer segmentOrder;
+	private String segmentType;
+	private Integer segmentTimeMinutes;
+	private String guidance;
+	private String vehicles;
 	private Double lat;
 	private Double lng;
 

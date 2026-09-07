@@ -4,6 +4,7 @@ import com.kh.midpoint.route.model.dto.ParticipantRouteQueryDto;
 import com.kh.midpoint.route.model.dto.RoutePointQueryDto;
 import com.kh.midpoint.route.model.vo.ParticipantRoute;
 import com.kh.midpoint.route.model.vo.ParticipantRoutePoint;
+import com.kh.midpoint.route.model.vo.ParticipantRouteSegment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,7 +13,13 @@ import java.util.List;
 @Mapper
 public interface RouteMapper {
 
+	Long findNextRouteId();
+
+	Long findNextRouteSegmentId();
+
 	void insertRoute(ParticipantRoute participantRoute);
+
+	void insertRouteSegment(ParticipantRouteSegment participantRouteSegment);
 
 	void insertRoutePointList(List<ParticipantRoutePoint> routePoints);
 

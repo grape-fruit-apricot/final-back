@@ -1,25 +1,25 @@
 package com.kh.midpoint.route.model.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class ParticipantRouteResponseDto {
+public class RouteSegmentDto {
 
-	private Long participantId;
-	private String nickname;
-	private String travelMode;
-	private int timeMinutes;
+	private Integer segmentOrder;
+	private String segmentType;
+	private Integer timeMinutes;
+	private String guidance;
+	private List<String> vehicles;
 	private List<RoutePointDto> points;
-	private List<RouteSegmentDto> segments;
 
 }
