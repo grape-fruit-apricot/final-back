@@ -1,5 +1,6 @@
 package com.kh.midpoint.game.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -26,12 +27,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GameDisconnectListener {
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
 	private final GameService gameService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@EventListener
 	public void handleSessionDisconnect(SessionDisconnectEvent event) {
-		ChatSession session = ChatSession.from(StompHeaderAccessor.wrap(event.getMessage()));
+		ChatSession session = ChatSession.from(StompHeaderAccessor.wrap(event.getMessage()), sessionAttributeKey);
 		if (session == null) {
 			return;
 		}

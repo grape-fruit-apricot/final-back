@@ -1,6 +1,7 @@
 package com.kh.midpoint.point.controller;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -21,13 +22,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MidPointController {
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
 	private final MidPointService midPointService;
 	private final RestaurantService restaurantService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/midpoint/find")
 	public void findMidpoint(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 중간지점 찾기 요청을 무시합니다.");
 			return;
@@ -52,7 +56,7 @@ public class MidPointController {
 
 	@MessageExceptionHandler
 	public void handleFindMidpointException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			return;
 		}

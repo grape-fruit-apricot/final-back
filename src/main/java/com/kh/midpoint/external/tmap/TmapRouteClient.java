@@ -22,7 +22,8 @@ import java.util.Map;
 
 @Component
 public class TmapRouteClient {
-	private static final String WALKING = "WALKING";
+	@Value("${route.segment-type.walking}")
+	private String walking;
 
 	// 상수는 전부 application-constant.yml 에 있다. 여기에 기본값을 적지 않는 이유는
 	// 출처를 한 곳으로 유지하기 위해서다(키가 빠지면 어떤 키인지 알려주며 기동이 실패한다).
@@ -67,7 +68,7 @@ public class TmapRouteClient {
 					new RoutePointDto(startY, startX),
 					new RoutePointDto(endY, endX));
 			List<RouteSegmentDto> segments = List.of(new RouteSegmentDto(
-					0, WALKING, 0, null, List.of(), points));
+					0, walking, 0, null, List.of(), points));
 			return new TmapRouteDto(0, points, segments);
 		}
 
@@ -150,7 +151,7 @@ public class TmapRouteClient {
 				int segmentTimeMinutes = (int) Math.ceil(properties.path("time").asInt(0) / 60.0);
 				String guidance = properties.path("description").asString("");
 				segments.add(new RouteSegmentDto(
-						segments.size(), WALKING, segmentTimeMinutes,
+						segments.size(), walking, segmentTimeMinutes,
 						guidance.isBlank() ? null : guidance, List.of(), segmentPoints));
 				points.addAll(segmentPoints);
 			}

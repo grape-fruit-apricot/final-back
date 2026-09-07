@@ -21,8 +21,10 @@ import tools.jackson.databind.JsonNode;
 @Component
 public class KakaoTransitClient {
 
-	private static final String BUS = "BUS";
-	private static final String SUBWAY = "SUBWAY";
+	@Value("${route.segment-type.bus}")
+	private String bus;
+	@Value("${route.segment-type.subway}")
+	private String subway;
 
 	private final RestClient transitClient;
 
@@ -178,7 +180,7 @@ public class KakaoTransitClient {
 
 	private boolean isTransitStep(JsonNode step) {
 		String stepType = step.path("properties").path("type").asString();
-		return BUS.equals(stepType) || SUBWAY.equals(stepType);
+		return bus.equals(stepType) || subway.equals(stepType);
 	}
 
 }
