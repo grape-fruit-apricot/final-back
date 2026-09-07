@@ -39,6 +39,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	@Value("${chat.heartbeat-interval}")
 	private long heartbeatInterval;
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
 	private final ThreadPoolTaskScheduler heartbeatScheduler = createHeartbeatScheduler();
 
 	private final ChatService chatService;
@@ -81,7 +84,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					Long participantId = parseId(accessor.getFirstNativeHeader("participantId"));
 
 					ChatSession session = chatService.openSession(roomUuid, participantId);
-					attributes.put(ChatSession.ATTR_KEY, session);
+					attributes.put(sessionAttributeKey, session);
 
 					return message;
 

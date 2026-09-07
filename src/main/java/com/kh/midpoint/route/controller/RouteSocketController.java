@@ -1,6 +1,7 @@
 package com.kh.midpoint.route.controller;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -24,13 +25,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RouteSocketController {
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
 	private final RouteService routeService;
 	private final ParticipantService participantService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/result/find")
 	public void findRoute(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 결과 확정 요청을 무시합니다.");
 			return;
@@ -44,7 +48,7 @@ public class RouteSocketController {
 
 	@MessageExceptionHandler
 	public void handleFindRouteException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			return;
 		}

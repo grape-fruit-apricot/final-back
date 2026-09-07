@@ -36,12 +36,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GameService {
 
-	public static final String STATUS_PLAYING = "PLAYING";
-	public static final String STATUS_FINISHED = "FINISHED";
-	public static final String STATUS_ABORTED = "ABORTED";
+	@Value("${game.status.playing}")
+	private String statusPlaying;
+	@Value("${game.status.finished}")
+	private String statusFinished;
+	@Value("${game.status.aborted}")
+	private String statusAborted;
 
-	private static final String STAGE_RESOLVING = "RESOLVING";
-	private static final String STAGE_GAME_PLAYING = "GAME_PLAYING";
+	@Value("${room.stage.resolving}")
+	private String stageResolving;
+	@Value("${room.stage.game-playing}")
+	private String stageGamePlaying;
 
 	// 잠금 순서는 항상 ROOM -> GAME 으로 고정한다. 게임 진행 중에도 방 상태(stage)를 바꾸므로
 	// 순서가 뒤집힌 경로가 하나라도 있으면 투표·게임시작과 맞물려 교착이 날 수 있다.
@@ -94,7 +99,7 @@ public class GameService {
 				.build());
 		gameMapper.insertGameParticipantList(players);
 
-		roomService.updateStage(room.getRoomId(), STAGE_GAME_PLAYING);
+		roomService.updateStage(room.getRoomId(), stageGamePlaying);
 
 		return findGameStatus(roomUuid);
 	}
@@ -119,7 +124,7 @@ public class GameService {
 			gameMapper.updateGameWinner(participantId);
 			// 게임이 끝났으니 결과를 확정할 수 있는 상태로 되돌린다.
 			// RouteService 가 이어서 RESOLVED 로 바꾼다.
-			roomService.updateStage(room.getRoomId(), STAGE_RESOLVING);
+			roomService.updateStage(room.getRoomId(), stageResolving);
 			return findGameStatus(roomUuid);
 		}
 
@@ -133,7 +138,7 @@ public class GameService {
 	public GameStatusDto updateTurnExpired(String roomUuid, Integer turnSeq) {
 		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		GameQueryDto game = gameMapper.findGameForUpdate(room.getRoomId());
-		if (game == null || !STATUS_PLAYING.equals(game.getStatus())) {
+		if (game == null || !statusPlaying.equals(game.getStatus())) {
 			return findGameStatus(roomUuid);
 		}
 
@@ -162,7 +167,7 @@ public class GameService {
 	public GameStatusDto updateGameParticipantLeft(String roomUuid, Long participantId) {
 		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		GameQueryDto game = gameMapper.findGameForUpdate(room.getRoomId());
-		if (game == null || !STATUS_PLAYING.equals(game.getStatus())) {
+		if (game == null || !statusPlaying.equals(game.getStatus())) {
 			return findGameStatus(roomUuid);
 		}
 
@@ -187,7 +192,7 @@ public class GameService {
 		// 이 메서드는 연결이 끊길 때마다 불린다. 채팅 탭을 오가기만 해도 끊기므로
 		// 대부분은 게임과 무관하다. 잠그기 전에 값싼 조회로 먼저 걸러낸다.
 		GameQueryDto game = gameMapper.findGame(room.getRoomId());
-		if (game == null || !STATUS_PLAYING.equals(game.getStatus())
+		if (game == null || !statusPlaying.equals(game.getStatus())
 				|| !participantId.equals(game.getCurrentParticipantId())) {
 			return null;
 		}
@@ -195,7 +200,7 @@ public class GameService {
 		// 여기서부터는 실제로 바꿔야 하므로 ROOM -> GAME 순서로 잠근다.
 		roomService.findRoomForUpdate(roomUuid);
 		game = gameMapper.findGameForUpdate(room.getRoomId());
-		if (game == null || !STATUS_PLAYING.equals(game.getStatus())
+		if (game == null || !statusPlaying.equals(game.getStatus())
 				|| !participantId.equals(game.getCurrentParticipantId())) {
 			return null;
 		}
@@ -251,7 +256,7 @@ public class GameService {
 		if (game == null) {
 			throw new NotFoundException("진행 중인 게임이 없습니다.");
 		}
-		if (!STATUS_PLAYING.equals(game.getStatus())) {
+		if (!statusPlaying.equals(game.getStatus())) {
 			throw new InvalidStateException("이미 끝난 게임입니다.");
 		}
 
@@ -290,7 +295,7 @@ public class GameService {
 	private void updateGameAborted(Long roomId) {
 		if (gameMapper.updateGameAborted(roomId) > 0) {
 			// 방을 막아두지 않는다. 방장이 무작위로 넘길 수 있는 상태로 되돌린다.
-			roomService.updateStage(roomId, STAGE_RESOLVING);
+			roomService.updateStage(roomId, stageResolving);
 		}
 	}
 
@@ -335,7 +340,7 @@ public class GameService {
 	}
 
 	private void validateGameStart(RoomResponseDto room) {
-		if (!STAGE_RESOLVING.equals(room.getStage())) {
+		if (!stageResolving.equals(room.getStage())) {
 			throw new InvalidStateException("게임을 시작할 수 있는 상태가 아닙니다.");
 		}
 	}
@@ -347,10 +352,10 @@ public class GameService {
 		if (game == null) {
 			return;
 		}
-		if (STATUS_PLAYING.equals(game.getStatus())) {
+		if (statusPlaying.equals(game.getStatus())) {
 			throw new DuplicateException("이미 게임이 진행 중입니다.");
 		}
-		if (STATUS_FINISHED.equals(game.getStatus())) {
+		if (statusFinished.equals(game.getStatus())) {
 			throw new InvalidStateException("이미 끝난 게임입니다.");
 		}
 		gameMapper.deleteGame(roomId);

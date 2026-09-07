@@ -1,5 +1,6 @@
 package com.kh.midpoint.game.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -26,13 +27,19 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GameSocketController {
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
+	@Value("${game.status.finished}")
+	private String statusFinished;
+
 	private final GameService gameService;
 	private final RouteService routeService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/game/start")
 	public void insertGame(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
 			return;
@@ -43,7 +50,7 @@ public class GameSocketController {
 
 	@MessageMapping("/game/pick")
 	public void insertGamePick(@Payload GamePickRequestDto requestDto, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
 			return;
@@ -56,7 +63,7 @@ public class GameSocketController {
 		// 그동안 참가자들이 빈 화면을 보게 된다.
 		sendStatus(session.roomUuid(), status);
 
-		if (GameService.STATUS_FINISHED.equals(status.getStatus())) {
+		if (statusFinished.equals(status.getStatus())) {
 			// 승자가 고른 식당을 결과로 먼저 박아둔다. 그러면 이어지는 findRoute 가
 			// 무작위 추첨을 건너뛰고 그 식당으로 경로를 만든다.
 			gameService.insertRoomResult(session.roomUuid());
@@ -69,7 +76,7 @@ public class GameSocketController {
 	// 누구나 보낼 수 있지만, 조건이 맞지 않으면 서비스에서 아무 일도 일어나지 않는다.
 	@MessageMapping("/game/expire")
 	public void updateTurnExpired(@Payload GameExpireRequestDto requestDto, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
 			return;
@@ -80,7 +87,7 @@ public class GameSocketController {
 
 	@MessageMapping("/game/leave")
 	public void updateGameParticipantLeft(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
 			return;
@@ -92,7 +99,7 @@ public class GameSocketController {
 
 	@MessageExceptionHandler
 	public void handleGameException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			return;
 		}

@@ -1,5 +1,6 @@
 package com.kh.midpoint.vote.model.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -26,8 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ModeVoteService {
 
-	public static final String MODE_GAME = "GAME";
-	public static final String MODE_RANDOM = "RANDOM";
+	@Value("${vote.mode.game}")
+	private String modeGame;
+	@Value("${vote.mode.random}")
+	private String modeRandom;
 
 	private final ModeVoteMapper modeVoteMapper;
 	private final RoomService roomService;
@@ -68,7 +71,7 @@ public class ModeVoteService {
 
 		// 게임으로 정해지면 방장이 게임을 시작할 수 있는 상태로 둔다(GameService 가 여기서 이어받는다).
 		// 무작위는 이어서 경로 확정(RouteService)이 돌면서 RESOLVED 로 바꾼다.
-		if (MODE_GAME.equals(status.getDecidedMode())) {
+		if (modeGame.equals(status.getDecidedMode())) {
 			roomService.updateStage(room.getRoomId(), "RESOLVING");
 		}
 
@@ -89,11 +92,11 @@ public class ModeVoteService {
 			return null;
 		}
 
-		long gameCount = votes.stream().filter(vote -> MODE_GAME.equals(vote.getVoteMode())).count();
+		long gameCount = votes.stream().filter(vote -> modeGame.equals(vote.getVoteMode())).count();
 		long randomCount = votes.size() - gameCount;
 
 		if (gameCount != randomCount) {
-			return gameCount > randomCount ? MODE_GAME : MODE_RANDOM;
+			return gameCount > randomCount ? modeGame : modeRandom;
 		}
 
 		return findHostVoteMode(participants, votes);
@@ -115,7 +118,7 @@ public class ModeVoteService {
 					// 투표 도중 방장이 나가면 표가 사라질 수 있다. 방을 막아두는 것보다
 					// 이미 구현된 무작위로 진행하는 편이 낫다.
 					log.warn("동점인데 방장 표를 찾지 못해 무작위로 진행합니다 - hostId={}", hostId);
-					return MODE_RANDOM;
+					return modeRandom;
 				});
 	}
 
@@ -132,7 +135,7 @@ public class ModeVoteService {
 	}
 
 	private void validateVoteMode(String voteMode) {
-		if (!MODE_GAME.equals(voteMode) && !MODE_RANDOM.equals(voteMode)) {
+		if (!modeGame.equals(voteMode) && !modeRandom.equals(voteMode)) {
 			throw new InvalidStateException("올바르지 않은 진행 방식입니다: " + voteMode);
 		}
 	}

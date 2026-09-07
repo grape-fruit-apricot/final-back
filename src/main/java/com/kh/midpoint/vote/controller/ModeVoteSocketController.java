@@ -1,5 +1,6 @@
 package com.kh.midpoint.vote.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -25,13 +26,19 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ModeVoteSocketController {
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
+	@Value("${vote.mode.random}")
+	private String modeRandom;
+
 	private final ModeVoteService modeVoteService;
 	private final RouteService routeService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/mode/start")
 	public void startModeVote(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
 			return;
@@ -43,7 +50,7 @@ public class ModeVoteSocketController {
 
 	@MessageMapping("/mode/vote")
 	public void insertModeVote(@Payload ModeVoteRequestDto requestDto, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 요청을 무시합니다.");
 			return;
@@ -56,7 +63,7 @@ public class ModeVoteSocketController {
 		// 이걸 나중에 보내면 그동안 참가자들이 빈 화면을 보게 된다.
 		sendStatus(session.roomUuid(), status);
 
-		if (ModeVoteService.MODE_RANDOM.equals(status.getDecidedMode())) {
+		if (modeRandom.equals(status.getDecidedMode())) {
 			RouteResponseDto result = routeService.findRoute(session.roomUuid());
 			messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 		}
@@ -64,7 +71,7 @@ public class ModeVoteSocketController {
 
 	@MessageExceptionHandler
 	public void handleModeVoteException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			return;
 		}

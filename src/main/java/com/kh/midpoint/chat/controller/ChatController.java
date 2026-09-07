@@ -1,5 +1,6 @@
 package com.kh.midpoint.chat.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -21,12 +22,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ChatController {
 
+	@Value("${chat.session-attribute-key}")
+	private String sessionAttributeKey;
+
 	private final ChatService chatService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/chat/enter")
 	public void enter(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 입장 요청을 무시합니다.");
 			return;
@@ -37,7 +41,7 @@ public class ChatController {
 
 	@MessageMapping("/chat/send")
 	public void send(ChatSendRequestDto requestDto, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 메시지를 무시합니다.");
 			return;
@@ -54,7 +58,7 @@ public class ChatController {
 
 	@MessageMapping("/chat/leave")
 	public void leave(SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			log.warn("검증되지 않은 연결이라 퇴장 요청을 무시합니다.");
 			return;
@@ -65,7 +69,7 @@ public class ChatController {
 
 	@MessageExceptionHandler
 	public void handleChatException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor);
+		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
 		if (session == null) {
 			return;
 		}
