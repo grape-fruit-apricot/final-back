@@ -5,12 +5,14 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ParticipantRoute {
+public class ParticipantRouteSegment {
 
+	Long routeSegmentId;
 	Long routeId;
-	Long roomId;
-	Long participantId;
-	String travelMode;
+	Integer segmentOrder;
+	String segmentType;
 	Integer timeMinutes;
+	String guidance;
+	String vehicles;
 
 }

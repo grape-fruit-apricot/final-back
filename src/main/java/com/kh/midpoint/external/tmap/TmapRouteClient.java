@@ -2,6 +2,8 @@ package com.kh.midpoint.external.tmap;
 
 import com.kh.midpoint.common.exception.ExternalApiException;
 import com.kh.midpoint.common.exception.NotFoundException;
+import com.kh.midpoint.route.model.dto.RoutePointDto;
+import com.kh.midpoint.route.model.dto.RouteSegmentDto;
 import tools.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -14,11 +16,13 @@ import org.springframework.web.client.RestClientResponseException;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class TmapRouteClient {
+	private static final String WALKING = "WALKING";
 
 	// 상수는 전부 application-constant.yml 에 있다. 여기에 기본값을 적지 않는 이유는
 	// 출처를 한 곳으로 유지하기 위해서다(키가 빠지면 어떤 키인지 알려주며 기동이 실패한다).
@@ -28,11 +32,11 @@ public class TmapRouteClient {
 	@Value("${route.end}")
 	private String endName;
 
-	@Value("${route.near}")
-	private double nearMeter;
+	@Value("${route.minimum-distance-meters}")
+	private double minimumDistanceMeters;
 
-	@Value("${route.radius}")
-	private double earthRadiusMeter;
+	@Value("${route.earth-radius-meters}")
+	private double earthRadiusMeters;
 
 	private final RestClient restClient;
 	private final String appKey;
@@ -58,8 +62,13 @@ public class TmapRouteClient {
 
 	@Cacheable(cacheNames = "route-pedestrian", key = "#startX + ',' + #startY + ',' + #endX + ',' + #endY")
 	public TmapRouteDto getPedestrianRoute(double startX, double startY, double endX, double endY) {
-		if (distanceMeters(startY, startX, endY, endX) < nearMeter) {
-			return new TmapRouteDto(0, List.of(new RoutePointDto(startY, startX)));
+		if (calculateDistanceMeters(startY, startX, endY, endX) < minimumDistanceMeters) {
+			List<RoutePointDto> points = List.of(
+					new RoutePointDto(startY, startX),
+					new RoutePointDto(endY, endX));
+			List<RouteSegmentDto> segments = List.of(new RouteSegmentDto(
+					0, WALKING, 0, null, List.of(), points));
+			return new TmapRouteDto(0, points, segments);
 		}
 
 		JsonNode response;
@@ -73,11 +82,12 @@ public class TmapRouteClient {
 										 	   "startY", String.valueOf(startY),
 										 	   "endX", String.valueOf(endX),
 										 	   "endY", String.valueOf(endY),
-										 	   "startName", startName,
-										 	   "endName", endName,
-										 	   "reqCoordType", "WGS84GEO",
-										 	   "resCoordType", "WGS84GEO"
-										))
+										   "startName", startName,
+										   "endName", endName,
+										   "reqCoordType", "WGS84GEO",
+										   "resCoordType", "WGS84GEO",
+										   "sort", "index"
+									))
 								 .retrieve()
 								 .body(JsonNode.class);
 		} catch (RestClientResponseException e) {
@@ -89,14 +99,15 @@ public class TmapRouteClient {
 		return parseRoute(response);
 	}
 
-	private double distanceMeters(double lat1, double lng1, double lat2, double lng2) {
-		double dLat = Math.toRadians(lat2 - lat1);
-		double dLng = Math.toRadians(lng2 - lng1);
-		double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-				+ Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-				* Math.sin(dLng / 2) * Math.sin(dLng / 2);
-		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		return earthRadiusMeter * c;
+	private double calculateDistanceMeters(double startLat, double startLng,
+			double endLat, double endLng) {
+		double latDifference = Math.toRadians(endLat - startLat);
+		double lngDifference = Math.toRadians(endLng - startLng);
+		double calculation = Math.sin(latDifference / 2) * Math.sin(latDifference / 2)
+				+ Math.cos(Math.toRadians(startLat)) * Math.cos(Math.toRadians(endLat))
+				* Math.sin(lngDifference / 2) * Math.sin(lngDifference / 2);
+		double centralAngle = 2 * Math.atan2(Math.sqrt(calculation), Math.sqrt(1 - calculation));
+		return earthRadiusMeters * centralAngle;
 	}
 
 	private TmapRouteDto parseRoute(JsonNode response) {
@@ -104,29 +115,51 @@ public class TmapRouteClient {
 		
 		int totalTimeSeconds = 0;
 		List<RoutePointDto> points = new ArrayList<>();
+		List<RouteSegmentDto> segments = new ArrayList<>();
+		List<JsonNode> lineFeatures = new ArrayList<>();
 
 		JsonNode features = response.path("features");
 		for (JsonNode feature : features) {
 			JsonNode properties = feature.path("properties");
-			JsonNode geometry = feature.path("geometry");
 
 			if (properties.has("totalTime")) {
 				totalTimeSeconds = Math.max(totalTimeSeconds, properties.path("totalTime").asInt());
 			}
 
-			if ("LineString".equals(geometry.path("type").asString())) {
-				for (JsonNode coord : geometry.path("coordinates")) {
+			if ("LineString".equals(feature.path("geometry").path("type").asString())) {
+				lineFeatures.add(feature);
+			}
+		}
+
+		// 카카오 대중교통의 steps처럼 Tmap도 properties.index가 실제 안내 순서를
+		// 나타낸다. 응답 배열 순서에 의존하면 구간이 뒤섞여 지도에서 왕복하는 선이 생길 수 있다.
+		lineFeatures.sort(Comparator.comparingInt(
+				feature -> feature.path("properties").path("index").asInt(Integer.MAX_VALUE)));
+
+		for (JsonNode feature : lineFeatures) {
+			JsonNode properties = feature.path("properties");
+			List<RoutePointDto> segmentPoints = new ArrayList<>();
+			for (JsonNode coord : feature.path("geometry").path("coordinates")) {
+				if (coord.isArray() && coord.size() >= 2) {
 					double lng = coord.get(0).asDouble();
 					double lat = coord.get(1).asDouble();
-					points.add(new RoutePointDto(lat, lng));
+					segmentPoints.add(new RoutePointDto(lat, lng));
 				}
+			}
+			if (!segmentPoints.isEmpty()) {
+				int segmentTimeMinutes = (int) Math.ceil(properties.path("time").asInt(0) / 60.0);
+				String guidance = properties.path("description").asString("");
+				segments.add(new RouteSegmentDto(
+						segments.size(), WALKING, segmentTimeMinutes,
+						guidance.isBlank() ? null : guidance, List.of(), segmentPoints));
+				points.addAll(segmentPoints);
 			}
 		}
 
 		validatePoints(points);
 
 		int timeMinutes = (int) Math.ceil(totalTimeSeconds / 60.0);
-		return new TmapRouteDto(timeMinutes, points);
+		return new TmapRouteDto(timeMinutes, points, segments);
 	}
 	
 	private void validateApi(JsonNode response) {

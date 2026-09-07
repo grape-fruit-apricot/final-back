@@ -1,4 +1,4 @@
-package com.kh.midpoint.external.tmap;
+package com.kh.midpoint.route.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

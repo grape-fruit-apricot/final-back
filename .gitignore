@@ -22,6 +22,8 @@ RemoteSystemsTempFiles/
 .project
 .classpath
 bin/
+database/
+.gradle-user-home/
 
 # ===== IntelliJ =====
 .idea/

@@ -55,7 +55,7 @@ public class KakaoLocalClient {
 
 	@Cacheable(cacheNames = "restaurants-nearby", key = "#lat + ',' + #lng")
 	public List<KakaoRestaurantResponseDto> findNearbyRestaurantList(Double lat, Double lng) {
-		JsonNode response = searchCategory(restaurantCode, lng, lat, restaurantRadius, "accuracy", restaurantResultSize);
+		JsonNode response = searchCategory(restaurantCode, lng, lat, restaurantRadius, "distance", restaurantResultSize);
 
 		return toRestaurantResponseList(response);
 	}
