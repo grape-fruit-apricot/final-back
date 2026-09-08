@@ -9,6 +9,8 @@ import java.util.List;
 @Mapper
 public interface RestaurantMapper {
 
+	int deleteRestaurant(Long roomId);
+
 	void insertRestaurantList(List<Restaurant> restaurants);
 
 	List<RestaurantResponseDto> findRestaurantList(String roomUuid);

@@ -30,7 +30,7 @@ public class RestaurantService {
 
 	@Transactional
 	public void insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		if (!"MIDPOINT_FOUND".equals(room.getStage())) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 등록할 수 있습니다.");
 		}
@@ -79,7 +79,7 @@ public class RestaurantService {
 	}
 
 	// 자동 수집이라 등록자(ADDED_BY)가 없다. 카카오 장소 ID 는 숫자 문자열이라 NUMBER 컬럼에 맞춰 변환한다.
-	private Restaurant toApiRestaurant(String roomUuid, KakaoRestaurantResponseDto nearby) {
+	public Restaurant toApiRestaurant(String roomUuid, KakaoRestaurantResponseDto nearby) {
 		return Restaurant.builder()
 				.roomUuid(roomUuid)
 				.source("API")

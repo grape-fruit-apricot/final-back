@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.selection.model.dao.SelectionMapper">
+	<delete id="deleteSelection">
+		DELETE FROM SELECTION
+		WHERE PARTICIPANT_ID IN (
+			SELECT PARTICIPANT_ID FROM PARTICIPANT WHERE ROOM_ID = #{roomId}
+		)
+	</delete>
 
 	<select id="findSelection" parameterType="long" resultType="SelectionResponseDto">
 		SELECT 

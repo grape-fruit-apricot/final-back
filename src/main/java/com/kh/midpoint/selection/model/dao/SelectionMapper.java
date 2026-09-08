@@ -9,6 +9,8 @@ import java.util.List;
 @Mapper
 public interface SelectionMapper {
 
+	int deleteSelection(Long roomId);
+
 	SelectionResponseDto findSelection(Long participantId);
 
 	List<SelectionResponseDto> findSelectionList(String roomUuid);

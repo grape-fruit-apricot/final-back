@@ -23,7 +23,7 @@ public class SelectionService {
 
 	@Transactional
 	public SelectionResponseDto insertSelection(String roomUuid, Long participantId, SelectionRequestDto requestDto) {
-		String stage = roomService.findRoom(roomUuid).getStage();
+		String stage = roomService.findRoomForUpdate(roomUuid).getStage();
 		if (!"MIDPOINT_FOUND".equals(stage)) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 선택할 수 있습니다.");
 		}
