@@ -27,7 +27,9 @@ public class ParticipantService {
 	
 	@Transactional
 	public ParticipantResponseDto insertParticipant(String roomUuid, JoinRoomRequestDto request) {
-		RoomResponseDto room = roomService.findRoom(roomUuid);
+		// 시작 처리와 같은 방 행을 잠가 동시 입장의 정원 초과와 시작 이후 입장을 막는다.
+		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
+		validateParticipantAdmission(room);
 
 		Participant participant = Participant.builder()
 				.roomId(room.getRoomId())
@@ -40,6 +42,16 @@ public class ParticipantService {
 		participantMapper.insertParticipant(participant);
 
 		return participantMapper.findParticipant(participant.getParticipantId());
+	}
+
+	private void validateParticipantAdmission(RoomResponseDto room) {
+		// 준비 여부와 관계없이 방장이 진행 방식 투표를 시작하기 전까지만 입장할 수 있다.
+		if (!"WAITING".equals(room.getStage()) && !"MIDPOINT_FOUND".equals(room.getStage())) {
+			throw new InvalidStateException("이미 시작된 방이라 입장할 수 없습니다.");
+		}
+		if (participantMapper.findParticipantList(room.getRoomId()).size() >= room.getMaxParticipants()) {
+			throw new InvalidStateException("방 인원이 가득 찼습니다.");
+		}
 	}
 
 	@Transactional
