@@ -10,6 +10,8 @@ import com.kh.midpoint.participant.model.vo.Participant;
 @Mapper
 public interface ParticipantMapper {
 
+	int resetReady(Long roomId);
+
 	void insertParticipant(Participant participant);
 
 	ParticipantResponseDto findParticipant(Long participantId);

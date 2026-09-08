@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.participant.model.dao.ParticipantMapper">
+	<update id="resetReady">
+		UPDATE PARTICIPANT SET IS_READY = 'N' WHERE ROOM_ID = #{roomId}
+	</update>
 	
 	<insert id="insertParticipant" parameterType="Participant">
 		<selectKey keyProperty="participantId" resultType="long" order="BEFORE">
