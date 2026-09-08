@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.game.model.dao.GameMapper">
 
 	<!-- 첫 차례 마감 시각을 DB 시계로 계산한다. n/86400 을 더하면 TIMESTAMP 가 DATE 로 바뀌어 정밀도를 잃는다. -->
