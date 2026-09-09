@@ -56,12 +56,11 @@ tmap:
 # application.yml 의 프로파일 순서가 constant -> local 이라 local 이 이긴다.
 # 커밋되는 constant 파일은 건드리지 않아도 된다.
 #
-# 배포 서버에서는 프론트 주소를 반드시 넣어야 한다. 안 넣으면 constant 의
-# localhost:5173 이 그대로 적용되어 브라우저가 모든 API 호출을 CORS 로 막는다.
+# CORS 는 여기에 안 적어도 된다. application-constant.yml 에 로컬 주소와 배포 주소가
+# 모두 들어 있다. 특정 환경만 더 좁히고 싶을 때만 아래처럼 덮어쓴다.
 #
 # cors:
-#   allowed-origin: "https://midpoint.my"        # 운영
-#   allowed-origin: "https://dev.midpoint.my"    # 개발
+#   allowed-origins: "https://midpoint.my,https://www.midpoint.my"   # 운영만 허용
 #
 # 로컬에서 상수를 잠깐 바꿔보고 싶을 때도 같은 방식으로 쓴다.
 # game:

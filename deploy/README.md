@@ -110,8 +110,10 @@ chmod 600 /opt/midpoint/{main,develop}/config/application-local.yml
 
 | 키 | main | develop |
 |---|---|---|
-| `cors.allowed-origin` | `https://midpoint.my` | `https://dev.midpoint.my` |
 | `spring.datasource.hikari.maximum-pool-size` | `10` | `5` |
+
+CORS 는 여기에 넣지 않는다. `application-constant.yml` 의 `cors.allowed-origins` 에
+로컬 주소와 배포 주소가 모두 들어 있다. 특정 환경만 더 좁히고 싶을 때만 같은 키로 덮어쓴다.
 
 풀 크기를 낮추는 이유: 학원 Oracle XE 는 전체 세션 수에 한계가 있는데,
 기본값 30 을 두 환경에 그대로 쓰면 60 개를 잡는다. 여기에 개발자 로컬까지 붙으면
