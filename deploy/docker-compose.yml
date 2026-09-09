@@ -12,7 +12,7 @@ services:
   main-web:
     image: nginx
     ports:
-      - "8081:80"
+      - "80:80"
     volumes:
       - ./main/dist:/usr/share/nginx/html:ro
       - ./main/nginx.conf:/etc/nginx/conf.d/default.conf:ro
@@ -45,7 +45,7 @@ services:
   develop-web:
     image: nginx
     ports:
-      - "8083:80"
+      - "8081:80"
     volumes:
       - ./develop/dist:/usr/share/nginx/html:ro
       - ./develop/nginx.conf:/etc/nginx/conf.d/default.conf:ro

@@ -20,7 +20,11 @@ jobs:
   deploy:
     name: 빌드 후 배포
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'develop' }}
+    env:
+      # 서버 디렉터리명(/opt/midpoint/<여기>)이자 compose 서비스 접두어(<여기>-api).
+      # GitHub Environment 를 쓰지 않으므로 vars 가 아니라 브랜치에서 계산한다.
+      # 환경별로 다른 값은 이것 하나뿐이라 상자를 두 개 둘 이유가 없었다.
+      DEPLOY_ENV: ${{ github.ref_name == 'main' && 'main' || 'develop' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +51,6 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
 
       - name: 서버로 전송
-        env:
-          DEPLOY_ENV: ${{ vars.DEPLOY_ENV }}
         run: |
           scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
             build/libs/app.jar deploy/api-deploy.sh \
@@ -58,4 +60,4 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
             "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}" \
-            "bash /opt/midpoint/${{ vars.DEPLOY_ENV }}/incoming/api-deploy.sh ${{ vars.DEPLOY_ENV }} ${{ github.sha }}"
+            "bash /opt/midpoint/${DEPLOY_ENV}/incoming/api-deploy.sh ${DEPLOY_ENV} ${{ github.sha }}"
