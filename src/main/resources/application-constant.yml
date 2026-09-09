@@ -71,11 +71,20 @@ chat:
 server:
   forward-headers-strategy: framework
 
-# 프론트 주소. 여기 값은 로컬 개발 기본값이다.
-# 배포 환경에서는 서버에 마운트하는 application-local.yml 이 이 값을 덮어쓴다
+# CORS 를 허용할 프론트 주소. 쉼표로 구분한 목록이다.
+#
+# 여기에 없는 주소에서 온 요청은 브라우저가 응답을 버린다. 서버 로그에는 정상으로 찍히고
+# 브라우저 콘솔에만 CORS 오류가 뜨기 때문에, 배포 후 "연결이 안 된다" 의 첫 번째 원인이 보통 이것이다.
+#
+# 로컬 개발 주소와 배포 주소를 모두 넣어둔다. 환경마다 파일을 다르게 둘 수도 있지만,
+# 값이 한 줄이라 그렇게 나누는 것보다 여기서 한눈에 보이는 편이 실수가 적다.
+# 특정 환경만 더 좁히고 싶으면 마운트하는 application-local.yml 에서 같은 키를 덮어쓰면 된다
 # (application.yml 의 프로파일 순서가 constant -> local 이라 local 이 이긴다).
+#
+# 주의: 끝에 / 를 붙이지 않는다. 오리진은 스킴+호스트+포트까지이고,
+# 경로가 붙으면 브라우저가 보내는 Origin 헤더와 문자열이 달라져서 매칭되지 않는다.
 cors:
-  allowed-origin: "http://localhost:5173"
+  allowed-origins: "http://localhost:5173,https://midpoint.my,https://www.midpoint.my,https://dev.midpoint.my"
 
 # 방 단계
 room:

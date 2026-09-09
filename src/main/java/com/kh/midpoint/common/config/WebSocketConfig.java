@@ -2,6 +2,7 @@ package com.kh.midpoint.common.config;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.annotation.PreDestroy;
@@ -43,8 +44,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	private String sessionAttributeKey;
 
 	// REST 와 같은 오리진만 허용한다. SecurityConfig 의 CORS 설정과 같은 값을 쓴다.
-	@Value("${cors.allowed-origin}")
-	private String allowedOrigin;
+	@Value("${cors.allowed-origins}")
+	private List<String> allowedOrigins;
 
 	private final ThreadPoolTaskScheduler heartbeatScheduler = createHeartbeatScheduler();
 
@@ -56,7 +57,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		// 방 UUID 는 초대 링크로 퍼지는 값이라, 아무 사이트나 그 UUID 하나로 남의 방
 		// 채팅·게임에 붙을 수 있다. REST 와 같은 오리진으로 맞춘다.
 		registry.addEndpoint("/ws")
-				.setAllowedOriginPatterns(allowedOrigin)
+				.setAllowedOriginPatterns(allowedOrigins.toArray(new String[0]))
 				.withSockJS();
 	}
 

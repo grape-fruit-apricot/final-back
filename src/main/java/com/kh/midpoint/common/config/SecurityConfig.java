@@ -16,9 +16,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	// 프론트 주소는 환경마다 다르다. 값은 application-constant.yml 에서 관리한다.
-	@Value("${cors.allowed-origin}")
-	private String allowedOrigin;
+	// 허용할 프론트 주소 목록. 값은 application-constant.yml 에서 쉼표로 구분해 관리한다.
+	// 쉼표 문자열을 List 로 바꿔주는 것은 Spring 의 기본 변환이라 별도 설정이 필요 없다.
+	@Value("${cors.allowed-origins}")
+	private List<String> allowedOrigins;
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -35,7 +36,7 @@ public class SecurityConfig {
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of(allowedOrigin));
+		configuration.setAllowedOrigins(allowedOrigins);
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
