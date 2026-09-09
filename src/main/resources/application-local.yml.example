@@ -1,0 +1,69 @@
+# application-local.yml 템플릿
+#
+# 이 파일을 application-local.yml 로 복사해서 값을 채운다. 그 파일은 gitignore 대상이라
+# 절대 커밋되지 않는다. 접속 정보와 API 키는 여기에만 둔다.
+#
+#   cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
+#
+# 값이 하나라도 비면 기동 시 "Could not resolve placeholder ..." 로 어떤 키가 빠졌는지
+# 알려주며 실패한다. 자바 쪽에 기본값을 두지 않기 때문이다.
+#
+# 배포 서버에서는 이 파일을 컨테이너 바깥에 두고 마운트한다.
+#   /opt/midpoint/main/config/application-local.yml     (운영)
+#   /opt/midpoint/develop/config/application-local.yml  (개발)
+# 컨테이너는 SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/ 로 이 파일을 읽는다.
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@호스트:포트:SID
+    # 따옴표로 감싼다. 계정명에 # 가 들어가면 YAML 파서가 주석으로 볼 여지가 있다
+    username: "계정명"
+    password: "비밀번호"
+    driver-class-name: oracle.jdbc.driver.OracleDriver
+    hikari:
+      # 학원 Oracle XE 는 전체 세션 수에 한계가 있다. 개발자 로컬까지 붙는 것을 감안해
+      # 서버에서는 운영 10 / 개발 5 정도로 낮춰 쓴다. 로컬 개발은 5 면 충분하다.
+      maximum-pool-size: 5
+      connection-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+server:
+  port: 8080
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.kh.midpoint
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: VARCHAR
+
+kakao:
+  # 카카오 개발자 콘솔의 REST API 키(서버용). 프론트의 JavaScript 키와 다른 값이다
+  rest-api-key: "발급받은_REST_API_키"
+  transit:
+    url: "https://dapi.kakao.com/v2/routing/publictraffic"
+
+tmap:
+  # SK open API 앱 키
+  app-key: "발급받은_TMAP_앱키"
+
+# --- 아래부터는 배포 서버에서만 채운다 ---
+#
+# application-constant.yml 의 값을 덮어쓰고 싶을 때 여기에 같은 키를 적는다.
+# application.yml 의 프로파일 순서가 constant -> local 이라 local 이 이긴다.
+# 커밋되는 constant 파일은 건드리지 않아도 된다.
+#
+# 배포 서버에서는 프론트 주소를 반드시 넣어야 한다. 안 넣으면 constant 의
+# localhost:5173 이 그대로 적용되어 브라우저가 모든 API 호출을 CORS 로 막는다.
+#
+# cors:
+#   allowed-origin: "https://midpoint.my"        # 운영
+#   allowed-origin: "https://dev.midpoint.my"    # 개발
+#
+# 로컬에서 상수를 잠깐 바꿔보고 싶을 때도 같은 방식으로 쓴다.
+# game:
+#   turn:
+#     seconds: 3

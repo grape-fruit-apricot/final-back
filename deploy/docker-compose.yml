@@ -1,0 +1,71 @@
+# 서버 /opt/midpoint/docker-compose.yml 에 두는 파일의 참고용 사본.
+#
+# 이 파일은 프론트(final-front)의 산출물도 함께 참조하므로 어느 한쪽 레포가 소유하지 않는다.
+# 서버에 한 번 배치하고 손으로 관리한다. 각 워크플로는 자기 서비스 하나만 재시작한다.
+#
+# 커스텀 이미지를 만들지 않는다. stock 이미지에 jar 와 dist 를 볼륨으로 넣는다.
+# 그래서 Dockerfile 도, 레지스트리도, 로그인도 없다.
+#
+# 앞단은 ALB 가 맡는다(TLS 종료 + Host 헤더로 4개 분기). 컨테이너는 평문 HTTP 만 쓴다.
+
+services:
+  main-web:
+    image: nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - ./main/dist:/usr/share/nginx/html:ro
+      - ./main/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      TZ: Asia/Seoul
+    restart: unless-stopped
+    mem_limit: 64m
+
+  main-api:
+    image: eclipse-temurin:21-jre
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./main/app.jar:/app.jar:ro
+      - ./main/config:/config:ro
+    environment:
+      # LOCATION 이 아니라 ADDITIONAL_LOCATION 이다.
+      # LOCATION 은 기본 탐색 위치를 통째로 대체해서, 그렇게 두면 jar 안의
+      # application.yml 과 application-constant.yml 이 안 읽히고 41개 @Value 가 전부 실패한다.
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/config/
+      # 코드에 ZoneId 지정이 없어서 컨테이너 기본값(UTC)이면 모든 시각이 9시간 밀린다.
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError
+    command: java -jar /app.jar
+    restart: unless-stopped
+    # 상한이 없으면 develop 이 메모리를 먹었을 때 커널 OOM Killer 가 이 JVM 을 고를 수 있다.
+    # 운영과 개발이 같은 호스트에 사는 구조에서 이게 유일한 방어다.
+    mem_limit: 1200m
+
+  develop-web:
+    image: nginx
+    ports:
+      - "8083:80"
+    volumes:
+      - ./develop/dist:/usr/share/nginx/html:ro
+      - ./develop/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      TZ: Asia/Seoul
+    restart: unless-stopped
+    mem_limit: 64m
+
+  develop-api:
+    image: eclipse-temurin:21-jre
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./develop/app.jar:/app.jar:ro
+      - ./develop/config:/config:ro
+    environment:
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/config/
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError
+    command: java -jar /app.jar
+    restart: unless-stopped
+    # 운영 쪽에 더 준다. 둘 중 하나가 죽어야 한다면 develop 이 먼저인 편이 낫다.
+    mem_limit: 900m

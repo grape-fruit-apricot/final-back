@@ -1,0 +1,76 @@
+name: 백엔드 CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 빌드 검증
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 접속 정보와 API 키가 들어 있는 파일이 추적 대상이 되면 즉시 막는다.
+      # 레포가 public 이라 한 번 올라가면 되돌릴 수 없다.
+      - name: 시크릿 파일 추적 여부 검사
+        run: |
+          fail=0
+          for f in src/main/resources/application-local.yml \
+                   src/main/resources/application-DB.yml \
+                   src/main/resources/application-secret.yml; do
+            if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+              echo "::error file=$f::시크릿 파일이 커밋되었습니다. git rm --cached 로 되돌리세요."
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          # ~/.gradle/caches 와 wrapper/dists 를 함께 캐시한다.
+          # gradle-wrapper.properties 가 retries=0 이라 배포판 다운로드가 한 번 실패하면
+          # 재시도 없이 job 이 죽는데, 캐시가 있으면 다운로드 자체가 일어나지 않는다.
+          cache: gradle
+
+      # -x test 는 쓰지 않는다. bootJar 는 원래 test 에 의존하지 않아서(태스크 그래프:
+      # compileJava -> processResources -> classes -> resolveMainClassName -> bootJar)
+      # 아무 효과가 없고, 그 상태로는 테스트 코드가 컴파일조차 되지 않는다.
+      # compileTestJava 를 명시해 테스트 코드가 깨진 PR 은 걸러낸다.
+      #
+      # 테스트 실행은 하지 않는다. 유일한 테스트가 @SpringBootTest 라
+      # 마운트 설정 파일과 학원 DB 연결이 둘 다 있어야 하는데 러너에는 없다.
+      - name: 빌드
+        run: ./gradlew clean compileTestJava bootJar --no-daemon
+
+      - name: jar 내용 검증
+        run: |
+          JAR=build/libs/app.jar
+          test -f "$JAR" || { echo "::error::$JAR 이 없습니다"; exit 1; }
+
+          # 여기가 이 스텝의 본체다.
+          # .gitignore 의 부정 규칙을 잘못 건드리면 시크릿 파일이 jar 에 딸려 들어간다.
+          if unzip -l "$JAR" | grep -q 'BOOT-INF/classes/application-local.yml'; then
+            echo "::error::application-local.yml 이 jar 에 포함되었습니다. .gitignore 를 확인하세요."
+            exit 1
+          fi
+
+          # 반대로 공통 설정이 빠지면 41개 @Value 가 전부 실패하며 기동하지 못한다.
+          for need in 'BOOT-INF/classes/application.yml' \
+                      'BOOT-INF/classes/application-constant.yml' \
+                      'BOOT-INF/classes/mapper/'; do
+            unzip -l "$JAR" | grep -q "$need" \
+              || { echo "::error::$need 이 jar 에 없습니다"; exit 1; }
+          done
+
+          echo "jar 검증 통과"
