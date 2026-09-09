@@ -42,14 +42,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	@Value("${chat.session-attribute-key}")
 	private String sessionAttributeKey;
 
+	// REST 와 같은 오리진만 허용한다. SecurityConfig 의 CORS 설정과 같은 값을 쓴다.
+	@Value("${cors.allowed-origin}")
+	private String allowedOrigin;
+
 	private final ThreadPoolTaskScheduler heartbeatScheduler = createHeartbeatScheduler();
 
 	private final ChatService chatService;
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
+		// "*" 로 두면 REST 쪽 CORS 를 아무리 조여도 이 소켓만 전 세계에 열린다.
+		// 방 UUID 는 초대 링크로 퍼지는 값이라, 아무 사이트나 그 UUID 하나로 남의 방
+		// 채팅·게임에 붙을 수 있다. REST 와 같은 오리진으로 맞춘다.
 		registry.addEndpoint("/ws")
-				.setAllowedOriginPatterns("*")
+				.setAllowedOriginPatterns(allowedOrigin)
 				.withSockJS();
 	}
 
