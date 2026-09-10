@@ -66,17 +66,28 @@ public class ParticipantService {
 		}
 	}
 
-	// 게임 시작 전 준비 완료 표시. 피그마상 준비를 해제하는 동작은 없어 'Y' 로만 바꾼다.
+	// 게임 시작 전 준비 상태를 뒤집는다. 준비한 사람이 같은 버튼을 다시 누르면 준비가 풀린다.
 	@Transactional
 	public void updateReady(String roomUuid, Long participantId) {
 		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
+		validateReadyChangeable(roomUuid);
 
 		Participant updated = Participant.builder()
 				.participantId(participant.getParticipantId())
-				.isReady("Y")
+				.isReady("Y".equals(participant.getIsReady()) ? "N" : "Y")
 				.build();
 
 		participantMapper.updateReady(updated);
+	}
+
+	// 입장 가능 단계와 같은 기준이다. 방장이 시작을 누르기 전까지만 준비를 바꿀 수 있다.
+	// 게임 인원은 방장 + 준비 완료로 정해지므로(GameService.findPlayerList),
+	// 시작 이후에 준비를 풀 수 있으면 이미 순번까지 짜인 게임에서 빠져나가게 된다.
+	private void validateReadyChangeable(String roomUuid) {
+		String stage = roomService.findRoom(roomUuid).getStage();
+		if (!"WAITING".equals(stage) && !"MIDPOINT_FOUND".equals(stage)) {
+			throw new InvalidStateException("이미 시작된 방이라 준비 상태를 바꿀 수 없습니다.");
+		}
 	}
 
 	@Transactional(readOnly = true)
