@@ -4,7 +4,9 @@ import com.kh.midpoint.common.exception.ExternalApiException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.route.model.dto.RoutePointDto;
 import com.kh.midpoint.route.model.dto.RouteSegmentDto;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
@@ -19,9 +21,23 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Component
 public class TmapRouteClient {
+
+	// Tmap 은 POI 이름에 NUL(U+0000) 같은 제어문자를 이스케이프하지 않고 그대로 실어 보낸다.
+	// 예: "name": "GS주유소 고속터미널<NUL>이촌역 5번출구"
+	// JSON 표준은 제어문자를 이스케이프 형태로 적도록 요구하므로 파서가 응답을 거부한다.
+	// 그래서 JsonNode 로 바로 받지 못하고, 문자열로 받아 걷어낸 뒤 파싱한다.
+	// 문자열 밖의 제어문자는 JSON 에서 공백 취급이라 지워도 구조가 바뀌지 않고,
+	// 문자열 안의 것은 애초에 들어와서는 안 되는 값이라 지우는 편이 맞다.
+	// (허용 옵션으로 통과시키면 NUL 이 안내 문구를 타고 화면과 DB 까지 흘러간다)
+	private static final Pattern CONTROL_CHARACTERS = Pattern.compile("[\\x00-\\x1F]");
+
+	// JsonMapper 는 스레드 안전하고 설정이 필요 없어 하나만 만들어 재사용한다.
+	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
+
 	@Value("${route.segment-type.walking}")
 	private String walking;
 
@@ -72,9 +88,9 @@ public class TmapRouteClient {
 			return new TmapRouteDto(0, points, segments);
 		}
 
-		JsonNode response;
+		String rawBody;
 		try {
-			response = restClient.post()
+			rawBody = restClient.post()
 								 .uri(routeUrl)
 								 .header("appKey", appKey)
 								 .contentType(MediaType.APPLICATION_JSON)
@@ -90,14 +106,26 @@ public class TmapRouteClient {
 										   "sort", "index"
 									))
 								 .retrieve()
-								 .body(JsonNode.class);
+								 .body(String.class);
 		} catch (RestClientResponseException e) {
 			throw new ExternalApiException("Tmap 요청 실패(status=" + e.getStatusCode().value() + ")");
 		} catch (RestClientException e) {
 			throw new ExternalApiException("Tmap 요청 실패: " + e.getMessage());
 		}
 
-		return parseRoute(response);
+		return parseRoute(readResponse(rawBody));
+	}
+
+	// 빈 응답은 여기서 null 로 넘겨 validateApi 가 기존 메시지로 처리하게 한다.
+	private JsonNode readResponse(String rawBody) {
+		if (rawBody == null || rawBody.isBlank()) {
+			return null;
+		}
+		try {
+			return JSON_MAPPER.readTree(CONTROL_CHARACTERS.matcher(rawBody).replaceAll(""));
+		} catch (JacksonException e) {
+			throw new ExternalApiException("Tmap 응답을 해석하지 못했습니다: " + e.getMessage());
+		}
 	}
 
 	private double calculateDistanceMeters(double startLat, double startLng,
