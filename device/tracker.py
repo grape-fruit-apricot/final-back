@@ -15,6 +15,11 @@
 디바이스가 "도착했다"를 보내는 구조면 그 값을 조작하는 것으로 결과가 바뀌기 때문이다.
 """
 
+# 라즈베리파이 OS 가 Bullseye 면 파이썬이 3.9 다. list[dict] | None 같은 표기는 3.10 부터라
+# 3.9 에서는 함수를 정의하는 순간 TypeError 로 죽는다. 이 import 가 애노테이션 평가를 미뤄
+# 3.7 이상이면 어디서든 돌게 한다(동작은 바뀌지 않는다).
+from __future__ import annotations
+
 import json
 import logging
 import sys

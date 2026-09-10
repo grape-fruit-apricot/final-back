@@ -10,6 +10,11 @@ tracker.py 는 LocationSource 인터페이스에만 의존하므로, 실제 GPS 
 이 한계를 숨기지 않고 교체 지점을 인터페이스로 드러내 둔다.
 """
 
+# 라즈베리파이 OS 가 Bullseye 면 파이썬이 3.9 다. list[dict] | None 같은 표기는 3.10 부터라
+# 3.9 에서는 함수를 정의하는 순간 TypeError 로 죽는다. 이 import 가 애노테이션 평가를 미뤄
+# 3.7 이상이면 어디서든 돌게 한다(동작은 바뀌지 않는다).
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
 # DB 의 좌표 컬럼이 NUMBER(8,6) / NUMBER(9,6) 이라 소수점 7자리부터는 저장될 때 잘린다.
