@@ -101,3 +101,13 @@ vote:
 
 midpoint:
   reset-distance-meters: 50
+
+# 외부 디바이스(라즈베리파이) 위치 추적
+tracking:
+# 확정 지점까지 이 거리 안에 들어오면 도착으로 본다(m). 단방향이라 한 번 도착하면 되돌리지 않는다
+  arrival-distance-meters: 50
+# 디바이스에게 알려주는 좌표 전송 주기(ms). 디바이스가 이 값을 받아 그대로 쓴다
+  interval-ms: 3000
+  status:
+    moving: "MOVING"
+    arrived: "ARRIVED"
