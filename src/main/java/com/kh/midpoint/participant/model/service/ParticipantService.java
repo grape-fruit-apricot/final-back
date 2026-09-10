@@ -56,8 +56,9 @@ public class ParticipantService {
 
 	@Transactional
 	public void deleteParticipant(String roomUuid, Long participantId) {
-		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
-		validateNotPlayingGame(roomUuid);
+		RoomResponseDto room = roomService.findRoom(roomUuid);
+		ParticipantResponseDto participant = findParticipantInRoom(room, participantId);
+		validateNotPlayingGame(room);
 
 		participantMapper.deleteParticipant(participantId);
 
@@ -66,22 +67,34 @@ public class ParticipantService {
 		}
 	}
 
-	// 게임 시작 전 준비 완료 표시. 피그마상 준비를 해제하는 동작은 없어 'Y' 로만 바꾼다.
+	// 게임 시작 전 준비 상태를 뒤집는다. 준비한 사람이 같은 버튼을 다시 누르면 준비가 풀린다.
 	@Transactional
 	public void updateReady(String roomUuid, Long participantId) {
-		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
+		RoomResponseDto room = roomService.findRoom(roomUuid);
+		ParticipantResponseDto participant = findParticipantInRoom(room, participantId);
+		validateReadyChangeable(room);
 
 		Participant updated = Participant.builder()
 				.participantId(participant.getParticipantId())
-				.isReady("Y")
+				.isReady("Y".equals(participant.getIsReady()) ? "N" : "Y")
 				.build();
 
 		participantMapper.updateReady(updated);
 	}
 
+	// 입장 가능 단계와 같은 기준이다. 방장이 시작을 누르기 전까지만 준비를 바꿀 수 있다.
+	// 게임 인원은 방장 + 준비 완료로 정해지므로(GameService.findPlayerList),
+	// 시작 이후에 준비를 풀 수 있으면 이미 순번까지 짜인 게임에서 빠져나가게 된다.
+	private void validateReadyChangeable(RoomResponseDto room) {
+		String stage = room.getStage();
+		if (!"WAITING".equals(stage) && !"MIDPOINT_FOUND".equals(stage)) {
+			throw new InvalidStateException("이미 시작된 방이라 준비 상태를 바꿀 수 없습니다.");
+		}
+	}
+
 	@Transactional(readOnly = true)
 	public void validateHost(String roomUuid, Long participantId) {
-		ParticipantResponseDto participant = findParticipantInRoom(roomUuid, participantId);
+		ParticipantResponseDto participant = findParticipantInRoom(roomService.findRoom(roomUuid), participantId);
 		if (!isHost(participant)) {
 			throw new ForbiddenException("방장만 수행할 수 있는 작업입니다.");
 		}
@@ -91,12 +104,12 @@ public class ParticipantService {
 	// 이게 없으면 A방 uuid 와 B방 participantId 를 섞어 남의 방 참가자 이름으로 요청할 수 있다.
 	@Transactional(readOnly = true)
 	public void validateParticipant(String roomUuid, Long participantId) {
-		findParticipantInRoom(roomUuid, participantId);
+		findParticipantInRoom(roomService.findRoom(roomUuid), participantId);
 	}
 
-	private ParticipantResponseDto findParticipantInRoom(String roomUuid, Long participantId) {
-		RoomResponseDto room = roomService.findRoom(roomUuid);
-
+	// 방은 호출하는 쪽에서 한 번만 읽어 넘긴다. 여기서 다시 읽으면 한 트랜잭션 안에서
+	// 같은 방 행을 두 번 조회하게 되고, 그 사이에 단계가 바뀌면 두 검사가 서로 다른 방을 보게 된다.
+	private ParticipantResponseDto findParticipantInRoom(RoomResponseDto room, Long participantId) {
 		ParticipantResponseDto participant = participantMapper.findParticipant(participantId);
 		if (participant == null || !participant.getRoomId().equals(room.getRoomId())) {
 			throw new NotFoundException("존재하지 않는 참가자입니다: " + participantId);
@@ -107,8 +120,8 @@ public class ParticipantService {
 	// 게임 중에는 참가자 행을 지우지 않는다. FK 가 전부 ON DELETE CASCADE 라
 	// 지우는 순간 GAME_PARTICIPANT·GAME_PICK·SELECTION 까지 함께 사라져 게임이 깨진다.
 	// 게임 중 이탈은 GAME_PARTICIPANT.LEFT_AT 을 남기는 소켓 경로(/app/game/leave)로 처리한다.
-	private void validateNotPlayingGame(String roomUuid) {
-		if ("GAME_PLAYING".equals(roomService.findRoom(roomUuid).getStage())) {
+	private void validateNotPlayingGame(RoomResponseDto room) {
+		if ("GAME_PLAYING".equals(room.getStage())) {
 			throw new InvalidStateException("게임이 진행 중이라 나갈 수 없습니다.");
 		}
 	}
