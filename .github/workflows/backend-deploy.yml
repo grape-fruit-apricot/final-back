@@ -1,0 +1,63 @@
+name: 백엔드 배포
+
+on:
+  push:
+    # 태그 push 에서는 돌지 않게 브랜치를 명시한다.
+    # (github.ref_name 은 태그에서도 값이 들어와서, 제한이 없으면 태그 하나에 dev 로 배포된다)
+    branches: [develop, main]
+  # 롤백·재배포용. 이전 커밋을 골라 다시 돌리면 그 버전이 배포된다.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # 배포 도중 취소되면 서버에 반쪽짜리 jar 가 남는다.
+  group: backend-deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: 빌드 후 배포
+    runs-on: ubuntu-latest
+    env:
+      # 서버 디렉터리명(/opt/midpoint/<여기>)이자 compose 서비스 접두어(<여기>-api).
+      # GitHub Environment 를 쓰지 않으므로 vars 가 아니라 브랜치에서 계산한다.
+      # 환경별로 다른 값은 이것 하나뿐이라 상자를 두 개 둘 이유가 없었다.
+      DEPLOY_ENV: ${{ github.ref_name == 'main' && 'main' || 'develop' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 기본값은 GITHUB_TOKEN 을 .git/config 에 남긴다. 빌드 스크립트가 읽을 수 있으므로 끈다.
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: 빌드
+        run: ./gradlew clean bootJar --no-daemon
+
+      # 84MB 짜리 jar 라 artifact 로 왕복시키지 않고 이 job 에서 바로 보낸다.
+      - name: SSH 키 준비
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ vars.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: 서버로 전송
+        run: |
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            build/libs/app.jar deploy/api-deploy.sh \
+            "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}:/opt/midpoint/${DEPLOY_ENV}/incoming/"
+
+      - name: 배포 실행
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            "${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}" \
+            "bash /opt/midpoint/${DEPLOY_ENV}/incoming/api-deploy.sh ${DEPLOY_ENV} ${{ github.sha }}"

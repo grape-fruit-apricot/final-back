@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.restaurant.model.dao.RestaurantMapper">
+	<delete id="deleteRestaurant">
+		DELETE FROM RESTAURANT WHERE ROOM_ID = #{roomId}
+	</delete>
+
+	<insert id="insertRestaurantList">
+		BEGIN
+		<foreach collection="list" item="item">
+			INSERT
+			  INTO
+				   RESTAURANT (
+								 RESTAURANT_ID
+							   , ROOM_ID
+							   , NAME
+							   , SOURCE
+							   , ADDRESS
+							   , LAT
+							   , LNG
+							   , ADDED_BY
+							   , CREATED_AT
+							   , KAKAO_PLACE_ID
+							   , CATEGORY
+							   , ROAD_ADDRESS
+							   , PHONE
+							   , PLACE_URL
+							   )
+			VALUES
+				   (
+					 SEQ_RESTAURANT.NEXTVAL
+				   , (
+					   SELECT
+							  ROOM_ID
+						 FROM
+							  ROOM
+						WHERE
+							  ROOM_UUID = #{item.roomUuid}
+					 )
+				   , #{item.name}
+				   , #{item.source}
+				   , #{item.address}
+				   , #{item.lat}
+				   , #{item.lng}
+				   , #{item.participantId}
+				   , SYSDATE
+				   , #{item.kakaoPlaceId}
+				   , #{item.category}
+				   , #{item.roadAddress}
+				   , #{item.phone}
+				   , #{item.placeUrl}
+				   );
+		</foreach>
+		END;
+	</insert>
+
+	<select id="findRestaurant" parameterType="long" resultType="RestaurantResponseDto">
+		SELECT
+			   r.RESTAURANT_ID
+			 , r.NAME
+			 , r.SOURCE
+			 , r.ADDRESS
+			 , r.LAT
+			 , r.LNG
+			 , r.ADDED_BY
+			 , r.CREATED_AT
+			 , r.CATEGORY
+			 , r.ROAD_ADDRESS
+			 , r.PHONE
+			 , r.PLACE_URL
+		  FROM
+			   RESTAURANT r
+		 WHERE
+			   r.RESTAURANT_ID = #{restaurantId}
+	</select>
+
+	<select id="findRestaurantList" resultType="RestaurantResponseDto">
+		SELECT
+			   r.RESTAURANT_ID
+			 , r.NAME
+			 , r.SOURCE
+			 , r.ADDRESS
+			 , r.LAT
+			 , r.LNG
+			 , r.ADDED_BY
+			 , r.CREATED_AT
+			 , r.CATEGORY
+			 , r.ROAD_ADDRESS
+			 , r.PHONE
+			 , r.PLACE_URL
+		  FROM 
+			   RESTAURANT r
+		  JOIN 
+		  	   ROOM rm
+		  	ON 
+		  	   rm.ROOM_ID = r.ROOM_ID
+		 WHERE 
+			   rm.ROOM_UUID = #{roomUuid}
+		 ORDER 
+			BY 
+		   	   r.CREATED_AT
+	</select>
+
+</mapper>

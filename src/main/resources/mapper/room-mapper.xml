@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.room.model.dao.RoomMapper">
+
+	<insert id="insertRoom" parameterType="Room">
+		INSERT 
+		  INTO 
+		  	   ROOM (
+					  ROOM_ID
+					, ROOM_UUID
+					<if test="maxParticipants != null">
+					, MAX_PARTICIPANTS
+					</if>
+					)
+		VALUES 
+			   (
+				 SEQ_ROOM.NEXTVAL
+			   , #{roomUuid}
+			   <if test="maxParticipants != null">
+			   , #{maxParticipants}
+			   </if>
+			   )
+	</insert>
+
+	<update id="updateMidpoint" parameterType="Room">
+		UPDATE
+			   ROOM
+		   SET
+			   MIDPOINT_LAT = #{midpointLat}
+			 , MIDPOINT_LNG = #{midpointLng}
+			 , MIDPOINT_SOURCE = #{midpointSource}
+		 WHERE
+			   ROOM_ID = #{roomId}
+	</update>
+
+	<update id="updateStage" parameterType="Room">
+		UPDATE
+			   ROOM
+		   SET
+			   STAGE = #{stage}
+		 WHERE
+			   ROOM_ID = #{roomId}
+	</update>
+
+	<!--
+		findRoom 과 같지만 방 행을 잠근다. 여러 명이 동시에 같은 방을 바꾸려 할 때
+		서로의 커밋을 보지 못해 아무도 마지막 한 명이 되지 못하는 문제를 막는다.
+		반드시 쓰기 트랜잭션 안에서만 호출한다.
+	-->
+	<select id="findRoomForUpdate" resultType="RoomResponseDto">
+		SELECT
+			   ROOM_ID
+			 , ROOM_UUID
+			 , MAX_PARTICIPANTS
+			 , MIDPOINT_LAT
+			 , MIDPOINT_LNG
+			 , MIDPOINT_SOURCE
+			 , STAGE
+			 , CREATED_AT
+			 , EXPIRES_AT
+		  FROM
+			   ROOM
+		 WHERE
+			   ROOM_UUID = #{roomUuid}
+		   FOR UPDATE
+	</select>
+
+	<select id="findRoom" resultType="RoomResponseDto">
+		SELECT
+			   ROOM_ID
+			 , ROOM_UUID
+			 , MAX_PARTICIPANTS
+			 , MIDPOINT_LAT
+			 , MIDPOINT_LNG
+			 , MIDPOINT_SOURCE
+			 , STAGE
+			 , CREATED_AT
+			 , EXPIRES_AT
+		  FROM 
+		  	   ROOM
+		 WHERE
+		 	   ROOM_UUID = #{roomUuid}
+	</select>
+
+</mapper>

@@ -1,0 +1,103 @@
+# 코드에 하드코딩하지 않는 상수 모음. 비밀값(DB 접속 정보, API 키)은 application-local.yml 에 둔다.
+# 이 파일이 없으면 기동 시 "Could not resolve placeholder ..." 로 어떤 키가 빠졌는지 알려주며 실패한다.
+# (자바 쪽에 기본값을 두지 않는다. 상수의 출처를 이 파일 하나로 유지하기 위해서다)
+
+# 중간지점 후보
+candidate:
+  count: 3
+  name: "중심점"
+
+# Tmap 도보 경로
+route:
+  segment-type:
+    walking: "WALKING"
+    bus: "BUS"
+    subway: "SUBWAY"
+  url: "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1"
+  start: "출발"
+  end: "도착"
+  minimum-distance-meters: 110
+  earth-radius-meters: 6371000
+  mode:
+      walk: "WALK"
+      transit: "TRANSIT"
+  transit:
+      station-count: 1
+
+# 카카오 로컬 카테고리 검색
+search:
+  category:
+    url: "https://dapi.kakao.com/v2/local/search/category.json"
+    subway:
+      code: "SW8"
+      radius: 10000
+    restaurant:
+      code: "FD6"
+      radius: 1000
+      result-size: 7
+
+# 보물 주머니 게임
+game:
+  status:
+    playing: "PLAYING"
+    finished: "FINISHED"
+    aborted: "ABORTED"
+  bag:
+# 2명 기준 10개, 인원이 1명 늘 때마다 5개 추가 -> 10 + (n-2)*5
+    base-count: 10
+    base-participants: 2
+    per-participant: 5
+  turn:
+# 개인당 선택 시간(초). 넘기면 다음 순서로 넘어간다
+    seconds: 30
+  min-participants: 2
+# 연속 타임아웃이 이 횟수를 넘으면 아무도 고르지 않는 것으로 보고 게임을 중단한다
+  max-consecutive-timeouts: 20
+
+# 외부 API 공통. 지정하지 않으면 무제한이라 응답이 없을 때 호출한 쪽이 묶인다(ms)
+external:
+  timeout:
+    connect: 3000
+    read: 5000
+
+# 채팅 heartbeat 주고받는 간격(ms). 이 시간 동안 신호가 없으면 끊긴 연결로 본다
+chat:
+  session-attribute-key: "chatSession"
+  heartbeat-interval: 10000
+
+# 앞단(ALB, nginx)이 TLS 를 끊고 평문 HTTP 로 넘겨주므로, 원래 요청이 https 였다는 것을
+# X-Forwarded-* 헤더로 읽어야 한다. 이게 없으면 서버가 자기를 http 로 알고
+# 리다이렉트 주소를 http 로 만든다. 로컬 개발에는 이 헤더가 없어 영향이 없다.
+server:
+  forward-headers-strategy: framework
+
+# CORS 를 허용할 프론트 주소. 쉼표로 구분한 목록이다.
+#
+# 여기에 없는 주소에서 온 요청은 브라우저가 응답을 버린다. 서버 로그에는 정상으로 찍히고
+# 브라우저 콘솔에만 CORS 오류가 뜨기 때문에, 배포 후 "연결이 안 된다" 의 첫 번째 원인이 보통 이것이다.
+#
+# 로컬 개발 주소와 배포 주소를 모두 넣어둔다. 환경마다 파일을 다르게 둘 수도 있지만,
+# 값이 한 줄이라 그렇게 나누는 것보다 여기서 한눈에 보이는 편이 실수가 적다.
+# 특정 환경만 더 좁히고 싶으면 마운트하는 application-local.yml 에서 같은 키를 덮어쓰면 된다
+# (application.yml 의 프로파일 순서가 constant -> local 이라 local 이 이긴다).
+#
+# 주의: 끝에 / 를 붙이지 않는다. 오리진은 스킴+호스트+포트까지이고,
+# 경로가 붙으면 브라우저가 보내는 Origin 헤더와 문자열이 달라져서 매칭되지 않는다.
+cors:
+  allowed-origins: "http://localhost:5173,https://midpoint.my,https://www.midpoint.my,https://dev.midpoint.my"
+
+# 방 단계
+room:
+  stage:
+    midpoint-found: "MIDPOINT_FOUND"
+    resolving: "RESOLVING"
+    game-playing: "GAME_PLAYING"
+
+# 진행 방식 투표
+vote:
+  mode:
+    game: "GAME"
+    random: "RANDOM"
+
+midpoint:
+  reset-distance-meters: 50

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.participant.model.dao.ParticipantMapper">
+	<update id="resetReady">
+		UPDATE PARTICIPANT SET IS_READY = 'N' WHERE ROOM_ID = #{roomId}
+	</update>
+	
+	<insert id="insertParticipant" parameterType="Participant">
+		<selectKey keyProperty="participantId" resultType="long" order="BEFORE">
+			SELECT SEQ_PARTICIPANT.NEXTVAL FROM DUAL
+		</selectKey>
+
+		INSERT 
+		  INTO 
+		       PARTICIPANT (
+							 PARTICIPANT_ID
+						   , ROOM_ID
+						   , NICKNAME
+						   , IS_HOST
+						   , PREF_LAT
+						   , PREF_LNG
+						   , JOINED_AT
+						   )
+		VALUES (
+				 #{participantId}
+			   , #{roomId}
+			   , #{nickname}
+			   , CASE 
+				 WHEN 
+				  NOT EXISTS (
+							   SELECT 
+							   		  1 
+							     FROM 
+							     	  PARTICIPANT
+							    WHERE 
+							    	  ROOM_ID = #{roomId}
+							 )
+				 THEN 
+				 	  'Y'
+				 ELSE 
+				 	  'N'
+				  END
+			   , #{prefLat}
+			   , #{prefLng}
+			   , SYSDATE
+			   )
+	</insert>
+
+	<select id="findParticipant" parameterType="long" resultType="ParticipantResponseDto">
+		SELECT 
+			   PARTICIPANT_ID
+			 , ROOM_ID
+			 , NICKNAME
+			 , IS_HOST
+			 , IS_READY
+			 , PREF_LAT
+			 , PREF_LNG
+			 , JOINED_AT
+			 , LEFT_AT
+		  FROM 
+			   PARTICIPANT
+		 WHERE 
+		 	   PARTICIPANT_ID = #{participantId}
+	</select>
+
+	<delete id="deleteParticipant" parameterType="long">
+		DELETE 
+		  FROM 
+		       PARTICIPANT
+		 WHERE 
+		 	   PARTICIPANT_ID = #{participantId}
+	</delete>
+
+	<update id="updateNextHost" parameterType="long">
+		UPDATE 
+			   PARTICIPANT
+		   SET 
+		   	   IS_HOST = 'Y'
+		 WHERE 
+		 	   PARTICIPANT_ID = (
+		 						  SELECT 
+		 						  		 MIN(PARTICIPANT_ID)
+		 						    FROM 
+		 						    	 PARTICIPANT 
+		 						   WHERE 
+		 								 ROOM_ID = #{roomId}
+		 						)
+	</update>
+	
+	<update id="updateReady" parameterType="Participant">
+		UPDATE
+			   PARTICIPANT
+		   SET
+		   	   IS_READY = #{isReady}
+		 WHERE
+		 	   PARTICIPANT_ID = #{participantId}
+	</update>
+
+	<select id="findParticipantList" resultType="ParticipantResponseDto">
+		SELECT 
+			   PARTICIPANT_ID
+			 , ROOM_ID
+			 , NICKNAME
+			 , IS_HOST
+			 , IS_READY
+			 , PREF_LAT
+			 , PREF_LNG
+			 , JOINED_AT
+			 , LEFT_AT
+		  FROM 
+		  	   PARTICIPANT
+		 WHERE 
+		 	   ROOM_ID = #{roomId}
+	</select>
+	
+</mapper>

@@ -23,6 +23,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
 	compileOnly 'org.projectlombok:lombok'
@@ -42,4 +44,24 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// 실행 가능한 jar 이름을 고정한다.
+// 기본값이면 build/libs 에 MidPointAPI-0.1_MidPointAPI.jar 와 -plain.jar 두 개가 생기는데,
+// 배포 스크립트가 와일드카드로 집으면 plain 쪽이 걸려 "no main manifest attribute" 로 죽는다.
+// 원인이 드러나지 않는 실패라 이름을 고정해 아예 헷갈릴 여지를 없앤다.
+tasks.named('bootJar') {
+	archiveFileName = 'app.jar'
+}
+
+// application-local.yml.example 은 사람이 보라고 두는 템플릿이다.
+// 소스 트리에서는 실제 파일 옆에 있어야 눈에 띄지만, jar 안에 들어가면
+// 설정이 왜 안 읽히는지 들여다볼 때 헷갈리기만 한다.
+tasks.named('processResources') {
+	exclude '**/*.example'
+}
+
+// @Cacheable SpEL 등에서 메서드 파라미터 이름을 사용할 수 있도록 컴파일 결과에 보존한다.
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs << '-parameters'
 }

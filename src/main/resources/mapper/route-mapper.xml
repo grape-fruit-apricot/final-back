@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.route.model.dao.RouteMapper">
+
+	<select id="findNextRouteId" resultType="long">
+		SELECT SEQ_PARTICIPANT_ROUTE.NEXTVAL FROM DUAL
+	</select>
+
+	<select id="findNextRouteSegmentId" resultType="long">
+		SELECT SEQ_PARTICIPANT_ROUTE_SEGMENT.NEXTVAL FROM DUAL
+	</select>
+
+	<insert id="insertRoute" parameterType="ParticipantRoute">
+		INSERT
+		  INTO
+			   PARTICIPANT_ROUTE (
+									 ROUTE_ID
+								   , ROOM_ID
+								   , PARTICIPANT_ID
+								   , TRAVEL_MODE
+								   , TIME_MINUTES
+								   )
+		VALUES
+			   (
+				 #{routeId}
+			   , #{roomId}
+			   , #{participantId}
+			   , #{travelMode}
+			   , #{timeMinutes}
+			   )
+	</insert>
+
+	<insert id="insertRouteSegment" parameterType="ParticipantRouteSegment">
+		INSERT
+		  INTO
+			   PARTICIPANT_ROUTE_SEGMENT (
+										 ROUTE_SEGMENT_ID
+									   , ROUTE_ID
+									   , SEGMENT_ORDER
+									   , SEGMENT_TYPE
+									   , TIME_MINUTES
+									   , GUIDANCE
+									   , VEHICLES
+									   )
+		VALUES
+			   (
+				 #{routeSegmentId}
+			   , #{routeId}
+			   , #{segmentOrder}
+			   , #{segmentType}
+			   , #{timeMinutes}
+			   , #{guidance}
+			   , #{vehicles}
+			   )
+	</insert>
+
+	<insert id="insertRoutePointList">
+		BEGIN
+		<foreach collection="list" item="point">
+			INSERT
+			  INTO
+				   PARTICIPANT_ROUTE_POINT (
+											 POINT_ID
+										   , ROUTE_SEGMENT_ID
+										   , POINT_ORDER
+										   , LAT
+										   , LNG
+										   )
+			VALUES
+				   (
+					 SEQ_PARTICIPANT_ROUTE_POINT.NEXTVAL
+				   , #{point.routeSegmentId}
+				   , #{point.pointOrder}
+				   , #{point.lat}
+				   , #{point.lng}
+				   );
+		</foreach>
+		END;
+	</insert>
+
+	<select id="findRouteList" resultType="ParticipantRouteQueryDto">
+		SELECT
+			   PR.ROUTE_ID
+			 , PR.PARTICIPANT_ID
+			 , P.NICKNAME
+			 , PR.TRAVEL_MODE
+			 , PR.TIME_MINUTES
+		  FROM
+			   PARTICIPANT_ROUTE PR
+		  JOIN
+			   PARTICIPANT P
+			ON
+			   P.PARTICIPANT_ID = PR.PARTICIPANT_ID
+		 WHERE
+			   PR.ROOM_ID = #{roomId}
+		<if test="travelMode != null">
+		   AND PR.TRAVEL_MODE = #{travelMode}
+		</if>
+		 ORDER
+			BY
+			   PR.PARTICIPANT_ID
+			 , CASE PR.TRAVEL_MODE WHEN 'WALK' THEN 1 WHEN 'TRANSIT' THEN 2 ELSE 3 END
+	</select>
+
+	<select id="findRoutePointListByRoom" parameterType="long" resultType="RoutePointQueryDto">
+		SELECT
+			   PR.ROUTE_ID
+			 , PRS.ROUTE_SEGMENT_ID
+			 , PRS.SEGMENT_ORDER
+			 , PRS.SEGMENT_TYPE
+			 , PRS.TIME_MINUTES AS SEGMENT_TIME_MINUTES
+			 , PRS.GUIDANCE
+			 , PRS.VEHICLES
+			 , PRP.LAT
+			 , PRP.LNG
+		  FROM
+			   PARTICIPANT_ROUTE PR
+		  JOIN
+			   PARTICIPANT_ROUTE_SEGMENT PRS
+			ON
+			   PRS.ROUTE_ID = PR.ROUTE_ID
+		  JOIN
+			   PARTICIPANT_ROUTE_POINT PRP
+			ON
+			   PRP.ROUTE_SEGMENT_ID = PRS.ROUTE_SEGMENT_ID
+		 WHERE
+			   PR.ROOM_ID = #{roomId}
+		 ORDER
+			BY
+			   PR.ROUTE_ID
+			 , PRS.SEGMENT_ORDER
+			 , PRP.POINT_ORDER
+	</select>
+
+</mapper>

@@ -23,10 +23,6 @@ public class ApiResponse<T> {
 		return new ApiResponse<>(201, message, data);
 	}
 
-	public static <T> ApiResponse<T> noContent(String message) {
-		return new ApiResponse<>(204, message, null);
-	}
-
 	public static <T> ApiResponse<T> error(int code, String message) {
 		return new ApiResponse<>(code, message, null);
 	}
