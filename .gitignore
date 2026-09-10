@@ -90,3 +90,8 @@ src/main/resources/static/*-test.html
 # (시크릿은 여기 없다. 워크플로는 GitHub Secrets/Variables 를 참조만 한다)
 !.github/workflows/*.yml
 !deploy/*.yml
+
+# ===== 라즈베리파이 =====
+# deviceKey 가 들어가므로 실제 설정 파일은 제외하고 예시만 커밋한다.
+device/config.json
+device/__pycache__/

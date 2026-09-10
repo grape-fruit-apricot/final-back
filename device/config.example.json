@@ -1,0 +1,7 @@
+{
+  "apiBaseUrl": "https://dev-api.midpoint.my",
+  "deviceKey": "서버의 application-local.yml 에 넣은 tracking.device-key 와 같은 값",
+  "steps": 40,
+  "pollIntervalSeconds": 3,
+  "intervalMsOverride": 1500
+}
