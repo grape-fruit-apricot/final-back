@@ -44,6 +44,7 @@ public class ModeVoteService {
 		// 투표를 다시 여는 동안 누가 표를 던지면 지워질 표가 섞인다. 방을 잠그고 처리한다.
 		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
 		validateMidpointFound(room);
+		validateAnyReady(roomUuid);
 
 		modeVoteMapper.deleteModeVoteList(roomUuid);
 		roomService.updateStage(room.getRoomId(), "MODE_SELECTED");
@@ -120,6 +121,18 @@ public class ModeVoteService {
 					log.warn("동점인데 방장 표를 찾지 못해 무작위로 진행합니다 - hostId={}", hostId);
 					return modeRandom;
 				});
+	}
+
+	// 준비를 마친 참가자가 한 명도 없으면 방장이 혼자 진행 방식을 정하게 된다.
+	// 방장에게는 준비 버튼 대신 시작 버튼이 있으므로, 여기서 세는 것은 방장을 뺀 나머지다.
+	// 이 검사가 게임 최소 인원(방장 + 준비 완료 >= 2)의 전제도 함께 만들어 준다.
+	private void validateAnyReady(String roomUuid) {
+		boolean anyReady = participantService.findParticipantList(roomUuid).stream()
+				.anyMatch(participant -> "Y".equals(participant.getIsReady()));
+
+		if (!anyReady) {
+			throw new InvalidStateException("준비를 마친 참가자가 최소 1명 있어야 시작할 수 있습니다.");
+		}
 	}
 
 	private void validateMidpointFound(RoomResponseDto room) {
