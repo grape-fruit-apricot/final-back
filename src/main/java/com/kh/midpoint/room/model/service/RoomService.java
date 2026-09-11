@@ -1,5 +1,7 @@
 package com.kh.midpoint.room.model.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,6 +67,22 @@ public class RoomService {
 		Room room = Room.builder().roomId(roomId).stage(stage).build();
 		int updatedRows = roomMapper.updateStage(room);
 		validateUpdatedRoom(updatedRows);
+	}
+
+	// 만료된 방을 상한 개수만큼 지운다. 지운 방 수를 돌려준다.
+	//
+	// 한 트랜잭션으로 묶는 이유는, 중간에 실패했을 때 일부만 지워진 상태로 남지 않게 하기
+	// 위해서다. 방 하나가 경로점까지 수천 행이라 상한(cleanup.batch-size)이 이 트랜잭션의
+	// 크기를 정한다. 남은 방은 다음 주기가 이어서 가져간다.
+	//
+	// 지울 방이 없으면 DELETE 를 부르지 않는다. IN () 은 빈 목록으로 만들 수 없다.
+	@Transactional
+	public int deleteExpiredRoomList(int batchSize) {
+		List<Long> expiredRoomIds = roomMapper.findExpiredRoomIdList(batchSize);
+		if (expiredRoomIds.isEmpty()) {
+			return 0;
+		}
+		return roomMapper.deleteRoomList(expiredRoomIds);
 	}
 
 	private void validateStage(String stage) {

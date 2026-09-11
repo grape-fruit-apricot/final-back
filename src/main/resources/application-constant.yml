@@ -111,3 +111,15 @@ tracking:
   status:
     moving: "MOVING"
     arrived: "ARRIVED"
+
+# 만료된 방 정리
+cleanup:
+# 켜져 있는 서버만 지운다. develop 과 main 이 같은 DB 를 보기 때문에, 둘 다 켜면
+# 같은 방을 동시에 지우려 하면서 잠금 대기가 생기고 로그로 원인을 읽기 어려워진다.
+# 기본은 꺼둔다. 지우는 서버의 application-local.yml 에서만 true 로 덮는다.
+  enabled: false
+# 정리 주기(ms). 만료 판정은 DB 시계(SYSDATE)로 하므로 이 주기가 정확할 필요는 없다
+  interval-ms: 600000
+# 한 번에 지울 방 수 상한. 방 하나가 경로점까지 수천 행이라 한꺼번에 몰면
+# Oracle XE 의 undo 와 커넥션을 오래 잡는다. 남은 방은 다음 주기에 이어서 지운다
+  batch-size: 20

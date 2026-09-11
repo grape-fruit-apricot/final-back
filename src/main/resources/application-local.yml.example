@@ -68,6 +68,13 @@ tracking:
 # cors:
 #   allowed-origins: "https://midpoint.my,https://www.midpoint.my"   # 운영만 허용
 #
+# 만료된 방 정리는 기본이 꺼짐(application-constant.yml 의 cleanup.enabled: false)이다.
+# develop 과 main 이 같은 Oracle 을 보기 때문에, 지우는 서버 한 곳에서만 켠다.
+# 로컬에서는 켜지 않는 것을 권한다. 팀원이 쓰던 방까지 지워진다.
+#
+# cleanup:
+#   enabled: true
+
 # 로컬에서 상수를 잠깐 바꿔보고 싶을 때도 같은 방식으로 쓴다.
 # game:
 #   turn:
