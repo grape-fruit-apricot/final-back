@@ -45,13 +45,14 @@ public class ChatController {
 			return;
 		}
 
-		String content = (requestDto == null || requestDto.getContent() == null)
-				? "" : requestDto.getContent().trim();
-		if (content.isEmpty()) {
+		ChatMessageResponseDto saved = chatService.insertTalkMessage(
+				session, requestDto == null ? null : requestDto.getContent());
+		// 저장할 내용이 없으면(빈 메시지) 알리지 않는다.
+		if (saved == null) {
 			return;
 		}
 
-		broadcast(session, MsgType.TALK, content);
+		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid(), saved);
 	}
 
 	@MessageMapping("/chat/leave")

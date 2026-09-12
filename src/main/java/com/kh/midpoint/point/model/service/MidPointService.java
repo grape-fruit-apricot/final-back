@@ -20,7 +20,9 @@ import com.kh.midpoint.room.model.dto.RoomResponseDto;
 import com.kh.midpoint.room.model.service.RoomService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MidPointService {
@@ -113,7 +115,20 @@ public class MidPointService {
 		roomService.updateMidpoint(room.getRoomId(), midpoint.getLat(), midpoint.getLng(), source);
 		roomService.updateStage(room.getRoomId(), midpointFoundStage);
 
+		insertNearbyRestaurantList(roomUuid, midpoint);
+
 		return midpoint;
+	}
+
+	// 중간지점이 확정된 뒤에 따로 저장한다. 같은 트랜잭션에서 돌리면 카카오 식당 조회가
+	// 실패했을 때 확정된 중간지점까지 롤백된다. 식당 목록은 없어도 중간지점은 살아 있어야 하므로
+	// 실패를 삼키고 로그만 남긴다.
+	private void insertNearbyRestaurantList(String roomUuid, NearbyStationDto midpoint) {
+		try {
+			restaurantService.insertNearbyRestaurantList(roomUuid, midpoint.getLat(), midpoint.getLng());
+		} catch (RuntimeException e) {
+			log.warn("주변 식당 저장 실패 - roomUuid={}, {}", roomUuid, e.toString());
+		}
 	}
 
 	// stage 값을 열거하는 대신 좌표 유무로 판단한다. 좌표가 먼저 저장되므로 이 검사만으로
