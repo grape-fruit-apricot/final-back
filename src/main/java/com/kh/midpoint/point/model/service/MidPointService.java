@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.kh.midpoint.common.util.DistanceCalculator;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
 import com.kh.midpoint.restaurant.model.vo.Restaurant;
 
@@ -27,12 +28,11 @@ public class MidPointService {
 
 	@Value("${midpoint.reset-distance-meters}")
 	private double resetDistanceMeters;
-	@Value("${route.earth-radius-meters}")
-	private double earthRadiusMeters;
 	@Value("${room.stage.midpoint-found}")
 	private String midpointFoundStage;
 
 	private final MidPointFinder midpointFinder;
+	private final DistanceCalculator distanceCalculator;
 	private final ParticipantService participantService;
 	private final RoomService roomService;
 	private final RestaurantService restaurantService;
@@ -59,7 +59,7 @@ public class MidPointService {
 				participantService.findParticipantList(roomUuid));
 
 		// 중간지점이 조금만 움직였으면 기존 식당 목록을 그대로 쓴다. 멀리 옮겨갔을 때만 다시 받는다.
-		boolean replaceRestaurants = findDistanceMeters(original.getMidpointLat(), original.getMidpointLng(),
+		boolean replaceRestaurants = distanceCalculator.findDistanceMeters(original.getMidpointLat(), original.getMidpointLng(),
 				midpoint.getLat(), midpoint.getLng()) > resetDistanceMeters;
 		List<Restaurant> restaurants = replaceRestaurants
 				? restaurantService.findNearbyRestaurantList(roomUuid, midpoint.getLat(), midpoint.getLng())
@@ -107,14 +107,6 @@ public class MidPointService {
 		}
 	}
 
-	// 위경도의 직선거리를 미터로 변환한다(Haversine).
-	private double findDistanceMeters(double lat1, double lng1, double lat2, double lng2) {
-		double latSin = Math.sin(Math.toRadians(lat2 - lat1) / 2);
-		double lngSin = Math.sin(Math.toRadians(lng2 - lng1) / 2);
-		double a = latSin * latSin
-				+ Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * lngSin * lngSin;
-		return earthRadiusMeters * 2 * Math.asin(Math.sqrt(Math.min(1.0, Math.max(0.0, a))));
-	}
 
 	// 여기에는 @Transactional 을 붙이지 않는다. 중간지점 계산은 카카오 1회 + Tmap 을
 	// (후보 수 x 참가자 수)만큼 호출하므로, 트랜잭션 안에서 돌리면 그 시간 내내 DB 커넥션을

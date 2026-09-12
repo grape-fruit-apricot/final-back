@@ -1,5 +1,6 @@
 package com.kh.midpoint.external.tmap;
 
+import com.kh.midpoint.common.util.DistanceCalculator;
 import com.kh.midpoint.common.exception.ExternalApiException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.route.model.dto.RoutePointDto;
@@ -52,19 +53,19 @@ public class TmapRouteClient {
 	@Value("${route.minimum-distance-meters}")
 	private double minimumDistanceMeters;
 
-	@Value("${route.earth-radius-meters}")
-	private double earthRadiusMeters;
-
 	private final RestClient restClient;
+	private final DistanceCalculator distanceCalculator;
 	private final String appKey;
 	private final String routeUrl;
 
 	// 타임아웃과 URL 은 생성자에서 RestClient 를 만들 때 필요하다. 필드 주입은 생성자 이후라
 	// 늦으므로 생성자 파라미터로 받는다.
-	public TmapRouteClient(@Value("${tmap.app-key}") String appKey,
+	public TmapRouteClient(DistanceCalculator distanceCalculator,
+			@Value("${tmap.app-key}") String appKey,
 			@Value("${route.url}") String routeUrl,
 			@Value("${external.timeout.connect}") long connectTimeoutMillis,
 			@Value("${external.timeout.read}") long readTimeoutMillis) {
+		this.distanceCalculator = distanceCalculator;
 		this.appKey = appKey;
 		this.routeUrl = routeUrl;
 
@@ -79,7 +80,7 @@ public class TmapRouteClient {
 
 	@Cacheable(cacheNames = "route-pedestrian", key = "#startX + ',' + #startY + ',' + #endX + ',' + #endY")
 	public TmapRouteDto getPedestrianRoute(double startX, double startY, double endX, double endY) {
-		if (calculateDistanceMeters(startY, startX, endY, endX) < minimumDistanceMeters) {
+		if (distanceCalculator.findDistanceMeters(startY, startX, endY, endX) < minimumDistanceMeters) {
 			List<RoutePointDto> points = List.of(
 					new RoutePointDto(startY, startX),
 					new RoutePointDto(endY, endX));
@@ -128,16 +129,6 @@ public class TmapRouteClient {
 		}
 	}
 
-	private double calculateDistanceMeters(double startLat, double startLng,
-			double endLat, double endLng) {
-		double latDifference = Math.toRadians(endLat - startLat);
-		double lngDifference = Math.toRadians(endLng - startLng);
-		double calculation = Math.sin(latDifference / 2) * Math.sin(latDifference / 2)
-				+ Math.cos(Math.toRadians(startLat)) * Math.cos(Math.toRadians(endLat))
-				* Math.sin(lngDifference / 2) * Math.sin(lngDifference / 2);
-		double centralAngle = 2 * Math.atan2(Math.sqrt(calculation), Math.sqrt(1 - calculation));
-		return earthRadiusMeters * centralAngle;
-	}
 
 	private TmapRouteDto parseRoute(JsonNode response) {
 		validateApi(response);

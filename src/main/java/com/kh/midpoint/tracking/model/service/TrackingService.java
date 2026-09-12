@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.common.util.DistanceCalculator;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.common.exception.UnauthorizedException;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
@@ -52,10 +53,9 @@ public class TrackingService {
 	private String arrivedStatus;
 	@Value("${tracking.device-key}")
 	private String deviceKey;
-	@Value("${route.earth-radius-meters}")
-	private double earthRadiusMeters;
 
 	private final TrackingMapper trackingMapper;
+	private final DistanceCalculator distanceCalculator;
 	private final RoomService roomService;
 	private final ParticipantService participantService;
 	private final RoomResultService roomResultService;
@@ -150,7 +150,7 @@ public class TrackingService {
 					session.getLastDistanceM(), session.getStatus(), session.getArrivedAt());
 		}
 
-		double distanceMeters = findDistanceMeters(point.getLat(), point.getLng(),
+		double distanceMeters = distanceCalculator.findDistanceMeters(point.getLat(), point.getLng(),
 				session.getDestLat(), session.getDestLng());
 
 		trackingMapper.insertLocationLog(LocationLog.builder()
@@ -208,7 +208,7 @@ public class TrackingService {
 		for (int index = 1; index < trail.size(); index++) {
 			TrackingPointResponseDto previous = trail.get(index - 1);
 			TrackingPointResponseDto point = trail.get(index);
-			totalDistanceMeters += findDistanceMeters(previous.getLat(), previous.getLng(),
+			totalDistanceMeters += distanceCalculator.findDistanceMeters(previous.getLat(), previous.getLng(),
 					point.getLat(), point.getLng());
 		}
 
@@ -241,17 +241,6 @@ public class TrackingService {
 	// 소수점 첫째 자리까지만 남긴다. 화면에 "320.53812 m" 를 띄울 이유가 없다.
 	private double round(double value) {
 		return Math.round(value * 10) / 10.0;
-	}
-
-	// 위경도의 직선거리를 미터로 변환한다(Haversine).
-	// MidPointService 에도 같은 계산이 private 으로 있다. 공용 유틸로 뽑는 것은
-	// 새 클래스를 만드는 일이라 팀 합의가 필요해, 이 PR 에서는 선례대로 각자 들고 간다.
-	private double findDistanceMeters(double lat1, double lng1, double lat2, double lng2) {
-		double latSin = Math.sin(Math.toRadians(lat2 - lat1) / 2);
-		double lngSin = Math.sin(Math.toRadians(lng2 - lng1) / 2);
-		double a = latSin * latSin
-				+ Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * lngSin * lngSin;
-		return earthRadiusMeters * 2 * Math.asin(Math.sqrt(Math.min(1.0, Math.max(0.0, a))));
 	}
 
 }
