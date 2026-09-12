@@ -44,13 +44,20 @@ public class CacheConfig {
 	@Value("${cache.route-pedestrian.ttl-minutes}")
 	private long routePedestrianTtlMinutes;
 
+	@Value("${cache.route-transit.maximum-size}")
+	private long routeTransitMaximumSize;
+
+	@Value("${cache.route-transit.ttl-minutes}")
+	private long routeTransitTtlMinutes;
+
 	@Bean
 	public CacheManager cacheManager() {
 		SimpleCacheManager cacheManager = new SimpleCacheManager();
 		cacheManager.setCaches(List.of(
 				buildCache("restaurants-nearby", restaurantsNearbyMaximumSize, restaurantsNearbyTtlMinutes),
 				buildCache("stations-nearby", stationsNearbyMaximumSize, stationsNearbyTtlMinutes),
-				buildCache("route-pedestrian", routePedestrianMaximumSize, routePedestrianTtlMinutes)
+				buildCache("route-pedestrian", routePedestrianMaximumSize, routePedestrianTtlMinutes),
+				buildCache("route-transit", routeTransitMaximumSize, routeTransitTtlMinutes)
 		));
 		return cacheManager;
 	}
