@@ -1,14 +1,12 @@
 package com.kh.midpoint.tracking.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
-import com.kh.midpoint.common.response.SocketErrorResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 import com.kh.midpoint.tracking.model.dto.TrackingResponseDto;
 import com.kh.midpoint.tracking.model.service.TrackingService;
@@ -42,20 +40,6 @@ public class TrackingSocketController {
 
 		TrackingResponseDto tracking = trackingService.insertTrackingSessionList(session.roomUuid());
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/tracking", tracking);
-	}
-
-	@MessageExceptionHandler
-	public void handleTrackingException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
-		if (session == null) {
-			return;
-		}
-
-		log.warn("이동 추적 시작 실패 - {}", e.toString());
-
-		String message = e.getMessage() == null ? "이동 추적을 시작하지 못했습니다." : e.getMessage();
-		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/tracking/error",
-				new SocketErrorResponseDto(message));
 	}
 
 }

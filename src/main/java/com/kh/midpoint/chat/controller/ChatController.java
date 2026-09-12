@@ -1,7 +1,6 @@
 package com.kh.midpoint.chat.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,7 +11,6 @@ import com.kh.midpoint.chat.model.dto.ChatSendRequestDto;
 import com.kh.midpoint.chat.model.service.ChatService;
 import com.kh.midpoint.chat.model.vo.ChatSession;
 import com.kh.midpoint.chat.model.vo.MsgType;
-import com.kh.midpoint.common.response.SocketErrorResponseDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,20 +63,6 @@ public class ChatController {
 		}
 
 		broadcast(session, MsgType.LEAVE, session.nickname() + "님이 퇴장하셨습니다.");
-	}
-
-	@MessageExceptionHandler
-	public void handleChatException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
-		if (session == null) {
-			return;
-		}
-
-		log.warn("채팅 처리 실패 - {}", e.toString());
-
-		String message = e.getMessage() == null ? "메시지를 처리하지 못했습니다." : e.getMessage();
-		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/chat/error",
-				new SocketErrorResponseDto(message));
 	}
 
 	private void broadcast(ChatSession session, MsgType msgType, String content) {

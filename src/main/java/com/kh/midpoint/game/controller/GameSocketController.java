@@ -1,7 +1,6 @@
 package com.kh.midpoint.game.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -9,7 +8,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
-import com.kh.midpoint.common.response.SocketErrorResponseDto;
 import com.kh.midpoint.game.model.dto.GameExpireRequestDto;
 import com.kh.midpoint.game.model.dto.GamePickRequestDto;
 import com.kh.midpoint.game.model.dto.GameStatusDto;
@@ -95,20 +93,6 @@ public class GameSocketController {
 
 		sendStatus(session.roomUuid(),
 				gameService.updateGameParticipantLeft(session.roomUuid(), session.participantId()));
-	}
-
-	@MessageExceptionHandler
-	public void handleGameException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
-		if (session == null) {
-			return;
-		}
-
-		log.warn("게임 처리 실패 - {}", e.toString());
-
-		String message = e.getMessage() == null ? "게임을 처리하지 못했습니다." : e.getMessage();
-		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/game/error",
-				new SocketErrorResponseDto(message));
 	}
 
 	private void sendStatus(String roomUuid, GameStatusDto status) {

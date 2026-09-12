@@ -1,7 +1,6 @@
 package com.kh.midpoint.vote.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -9,7 +8,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
-import com.kh.midpoint.common.response.SocketErrorResponseDto;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
 import com.kh.midpoint.route.model.service.RouteService;
 import com.kh.midpoint.vote.model.dto.ModeVoteRequestDto;
@@ -67,20 +65,6 @@ public class ModeVoteSocketController {
 			RouteResponseDto result = routeService.findRoute(session.roomUuid());
 			messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 		}
-	}
-
-	@MessageExceptionHandler
-	public void handleModeVoteException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
-		if (session == null) {
-			return;
-		}
-
-		log.warn("진행 방식 투표 실패 - {}", e.toString());
-
-		String message = e.getMessage() == null ? "투표를 처리하지 못했습니다." : e.getMessage();
-		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/mode/error",
-				new SocketErrorResponseDto(message));
 	}
 
 	private void sendStatus(String roomUuid, ModeVoteStatusDto status) {

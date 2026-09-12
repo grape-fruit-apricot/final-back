@@ -2,14 +2,12 @@ package com.kh.midpoint.point.controller;
 
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
-import com.kh.midpoint.common.response.SocketErrorResponseDto;
 import com.kh.midpoint.external.kakao.NearbyStationDto;
 import com.kh.midpoint.point.model.service.MidPointService;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
@@ -73,22 +71,5 @@ public class MidPointController {
 			log.warn("주변 식당 저장 실패 - roomUuid={}, {}", roomUuid, e.toString());
 		}
 	}
-
-	@MessageExceptionHandler
-	public void handleFindMidpointException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
-		if (session == null) {
-			return;
-		}
-
-		log.warn("중간지점 처리 실패 - {}", e.toString());
-
-		boolean isReset = "/app/midpoint/reset".equals(accessor.getDestination());
-		String message = e.getMessage() == null ? "중간지점을 처리하지 못했습니다." : e.getMessage();
-		String errorTopic = isReset ? "/midpoint/reset/error" : "/midpoint/error";
-		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + errorTopic,
-				new SocketErrorResponseDto(message));
-	}
-
 
 }

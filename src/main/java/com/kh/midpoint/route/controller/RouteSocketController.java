@@ -2,14 +2,12 @@ package com.kh.midpoint.route.controller;
 
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
-import com.kh.midpoint.common.response.SocketErrorResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
 import com.kh.midpoint.route.model.service.RouteService;
@@ -45,20 +43,5 @@ public class RouteSocketController {
 		RouteResponseDto result = routeService.findRoute(session.roomUuid());
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 	}
-
-	@MessageExceptionHandler
-	public void handleFindRouteException(Exception e, SimpMessageHeaderAccessor accessor) {
-		ChatSession session = ChatSession.from(accessor, sessionAttributeKey);
-		if (session == null) {
-			return;
-		}
-
-		log.warn("결과 확정 실패 - {}", e.toString());
-
-		String message = e.getMessage() == null ? "결과를 확정하지 못했습니다." : e.getMessage();
-		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result/error",
-				new SocketErrorResponseDto(message));
-	}
-
 
 }
