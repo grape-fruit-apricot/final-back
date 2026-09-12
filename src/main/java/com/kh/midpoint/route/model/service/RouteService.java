@@ -68,12 +68,7 @@ public class RouteService {
 	// 경로와 좌표 저장은 참가자별 이동수단 하나의 단위로 짧게 처리한다.
 	public RouteResponseDto findRoute(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
-		// 게임이 도는 중에는 결과를 확정하지 않는다. 이게 없으면 방장이 무작위 우회를 눌러
-		// 참가자들이 주머니를 고르는 도중에 결과를 가로챌 수 있다.
-		// 게임이 끝나거나 중단되면 RESOLVING 으로 돌아오므로 그때부터 확정할 수 있다.
-		if ("GAME_PLAYING".equals(room.getStage())) {
-			throw new InvalidStateException("게임이 진행 중입니다.");
-		}
+		validateGameNotPlaying(room.getStage());
 
 		List<ParticipantResponseDto> participants = participantService.findParticipantList(roomUuid);
 		RestaurantResponseDto restaurant = findRestaurant(roomUuid, room.getRoomId());
@@ -101,22 +96,42 @@ public class RouteService {
 		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId(), routes));
 	}
 
-	private RestaurantResponseDto findRestaurant(String roomUuid, Long roomId) {
-		RestaurantResponseDto restaurant = roomResultService.findRoomResult(roomId);
-		if (restaurant != null) {
-			return restaurant;
+	// 게임이 도는 중에는 결과를 확정하지 않는다. 이게 없으면 방장이 무작위 우회를 눌러
+	// 참가자들이 주머니를 고르는 도중에 결과를 가로챌 수 있다.
+	// 게임이 끝나거나 중단되면 RESOLVING 으로 돌아오므로 그때부터 확정할 수 있다.
+	private void validateGameNotPlaying(String stage) {
+		if ("GAME_PLAYING".equals(stage)) {
+			throw new InvalidStateException("게임이 진행 중입니다.");
 		}
+	}
 
-		Long restaurantId = findRandomRestaurantId(findSelectedRestaurantIdList(roomUuid));
-		restaurant = restaurantService.findRestaurant(restaurantId);
+	// 결과 확정은 진입점이 셋이다(투표가 RANDOM 으로 끝날 때, 게임이 끝날 때, 방장이 직접 누를 때).
+	// 조회와 확정을 한 트랜잭션으로 묶지 않으면 둘이 동시에 들어왔을 때 양쪽 다 "결과 없음" 을 보고
+	// 서로 다른 식당을 뽑는다. UK_ROOM_RESULT_ROOM 이 데이터는 지켜주지만 진 쪽이 예외를 던져
+	// 결과가 정상 확정된 방에 오류 메시지가 뿌려진다.
+	// 방 행을 잠그는 것은 다른 쓰기 경로(투표 집계, 게임 시작)가 이미 쓰는 방식과 같다.
+	// 외부 API 호출은 이 블록 밖에 있으므로 잠금 구간은 짧게 유지된다.
+	private RestaurantResponseDto findRestaurant(String roomUuid, Long roomId) {
+		return transactionTemplate.execute(status -> {
+			RoomResponseDto locked = roomService.findRoomForUpdate(roomUuid);
+			// 잠금을 잡기 전 검사와 잠금 사이에 게임이 시작될 수 있어 여기서 다시 본다.
+			validateGameNotPlaying(locked.getStage());
 
-		RoomResult roomResult = RoomResult.builder()
-				.roomId(roomId)
-				.restaurantId(restaurantId)
-				.build();
-		roomResultService.insertRoomResult(roomResult);
+			RestaurantResponseDto confirmed = roomResultService.findRoomResult(roomId);
+			if (confirmed != null) {
+				return confirmed;
+			}
 
-		return restaurant;
+			Long restaurantId = findRandomRestaurantId(findSelectedRestaurantIdList(roomUuid));
+
+			RoomResult roomResult = RoomResult.builder()
+					.roomId(roomId)
+					.restaurantId(restaurantId)
+					.build();
+			roomResultService.insertRoomResult(roomResult);
+
+			return restaurantService.findRestaurant(restaurantId);
+		});
 	}
 
 	private List<Long> findSelectedRestaurantIdList(String roomUuid) {
