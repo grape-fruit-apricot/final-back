@@ -62,10 +62,10 @@ public class GameSocketController {
 		sendStatus(session.roomUuid(), status);
 
 		if (statusFinished.equals(status.getStatus())) {
-			// 승자가 고른 식당을 결과로 먼저 박아둔다. 그러면 이어지는 findRoute 가
+			// 승자가 고른 식당을 결과로 먼저 박아둔다. 그러면 이어지는 insertRouteResult 가
 			// 무작위 추첨을 건너뛰고 그 식당으로 경로를 만든다.
 			gameService.insertRoomResult(session.roomUuid());
-			RouteResponseDto result = routeService.findRoute(session.roomUuid());
+			RouteResponseDto result = routeService.insertRouteResult(session.roomUuid());
 			messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 		}
 	}

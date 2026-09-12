@@ -18,7 +18,7 @@ public class RouteController {
 
 	private final RouteService routeService;
 
-	// 결과 확정(routeService.findRoute)은 방장만 할 수 있어야 하는데 REST 요청에는 신원이 없다.
+	// 결과 확정(routeService.insertRouteResult)은 방장만 할 수 있어야 하는데 REST 요청에는 신원이 없다.
 	// 그래서 확정은 RouteSocketController 의 /app/result/find 로만 열어두고, 여기서는 조회만 제공한다.
 	@GetMapping
 	public ResponseEntity<ApiResponse<RouteResponseDto>> findRouteResult(

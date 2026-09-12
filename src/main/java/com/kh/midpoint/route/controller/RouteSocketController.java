@@ -40,7 +40,7 @@ public class RouteSocketController {
 
 		participantService.validateHost(session.roomUuid(), session.participantId());
 
-		RouteResponseDto result = routeService.findRoute(session.roomUuid());
+		RouteResponseDto result = routeService.insertRouteResult(session.roomUuid());
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 	}
 

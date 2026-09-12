@@ -62,7 +62,7 @@ public class ModeVoteSocketController {
 		sendStatus(session.roomUuid(), status);
 
 		if (modeRandom.equals(status.getDecidedMode())) {
-			RouteResponseDto result = routeService.findRoute(session.roomUuid());
+			RouteResponseDto result = routeService.insertRouteResult(session.roomUuid());
 			messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 		}
 	}

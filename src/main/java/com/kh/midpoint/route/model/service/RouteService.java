@@ -66,7 +66,7 @@ public class RouteService {
 	// 참가자별 외부 경로 API 호출이 끝날 때까지 DB 트랜잭션이 유지되지 않도록
 	// 외부 API 조회는 트랜잭션 밖에서 수행한다.
 	// 경로와 좌표 저장은 참가자별 이동수단 하나의 단위로 짧게 처리한다.
-	public RouteResponseDto findRoute(String roomUuid) {
+	public RouteResponseDto insertRouteResult(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
 		validateGameNotPlaying(room.getStage());
 
@@ -80,7 +80,7 @@ public class RouteService {
 	}
 
 	// 이미 확정된 결과를 다시 계산하지 않고 읽기만 한다. 새로고침이나 뒤늦은 입장에서
-	// findRoute 를 다시 불러도 방·참가자·이동수단이 같은 기존 경로를 재사용한다.
+	// insertRouteResult 를 다시 불러도 방·참가자·이동수단이 같은 기존 경로를 재사용한다.
 	@Transactional(readOnly = true)
 	public RouteResponseDto findRouteResult(String roomUuid, String travelMode) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);
