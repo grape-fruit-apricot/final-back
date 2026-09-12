@@ -7,13 +7,13 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import com.kh.midpoint.game.model.service.GameResultResolver;
 import com.kh.midpoint.chat.model.vo.ChatSession;
 import com.kh.midpoint.game.model.dto.GameExpireRequestDto;
 import com.kh.midpoint.game.model.dto.GamePickRequestDto;
 import com.kh.midpoint.game.model.dto.GameStatusDto;
 import com.kh.midpoint.game.model.service.GameService;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
-import com.kh.midpoint.route.model.service.RouteService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +28,9 @@ public class GameSocketController {
 	@Value("${chat.session-attribute-key}")
 	private String sessionAttributeKey;
 
-	@Value("${game.status.finished}")
-	private String statusFinished;
 
 	private final GameService gameService;
-	private final RouteService routeService;
+	private final GameResultResolver gameResultResolver;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/game/start")
@@ -61,11 +59,9 @@ public class GameSocketController {
 		// 그동안 참가자들이 빈 화면을 보게 된다.
 		sendStatus(session.roomUuid(), status);
 
-		if (statusFinished.equals(status.getStatus())) {
-			// 승자가 고른 식당을 결과로 먼저 박아둔다. 그러면 이어지는 insertRouteResult 가
-			// 무작위 추첨을 건너뛰고 그 식당으로 경로를 만든다.
-			gameService.insertRoomResult(session.roomUuid());
-			RouteResponseDto result = routeService.insertRouteResult(session.roomUuid());
+		// 확정할 것이 있는지는 서비스가 판단한다. 여기서는 받은 것만 알린다.
+		RouteResponseDto result = gameResultResolver.insertRouteResultIfFinished(session.roomUuid(), status);
+		if (result != null) {
 			messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 		}
 	}

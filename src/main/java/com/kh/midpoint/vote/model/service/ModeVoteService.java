@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.route.model.service.RouteService;
+import com.kh.midpoint.route.model.dto.RouteResponseDto;
 import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
@@ -34,6 +36,7 @@ public class ModeVoteService {
 	private String modeRandom;
 
 	private final ModeVoteMapper modeVoteMapper;
+	private final RouteService routeService;
 	private final RoomService roomService;
 	private final ParticipantService participantService;
 
@@ -51,6 +54,18 @@ public class ModeVoteService {
 		roomService.updateStage(room.getRoomId(), RoomStage.MODE_SELECTED.name());
 
 		return findModeVoteStatus(roomUuid);
+	}
+
+	// "무작위로 결정되면 게임 없이 바로 결과를 확정한다" 는 판단. 전에는 소켓 컨트롤러에 있었다.
+	// 확정할 것이 없으면 null 을 돌려준다. 알릴 것이 없다는 뜻이다.
+	// 방식을 알리는 일과 나눠 둔 이유는 경로 계산에 몇 초가 걸리기 때문이다.
+	// 호출하는 쪽이 방식부터 알린 뒤에 이 메서드를 부른다.
+	public RouteResponseDto insertRouteResultIfRandom(String roomUuid, ModeVoteStatusDto status) {
+		if (!modeRandom.equals(status.getDecidedMode())) {
+			return null;
+		}
+
+		return routeService.insertRouteResult(roomUuid);
 	}
 
 	@Transactional

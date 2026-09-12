@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 
 import com.kh.midpoint.chat.model.vo.ChatSession;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
-import com.kh.midpoint.route.model.service.RouteService;
 import com.kh.midpoint.vote.model.dto.ModeVoteRequestDto;
 import com.kh.midpoint.vote.model.dto.ModeVoteStatusDto;
 import com.kh.midpoint.vote.model.service.ModeVoteService;
@@ -27,11 +26,8 @@ public class ModeVoteSocketController {
 	@Value("${chat.session-attribute-key}")
 	private String sessionAttributeKey;
 
-	@Value("${vote.mode.random}")
-	private String modeRandom;
 
 	private final ModeVoteService modeVoteService;
-	private final RouteService routeService;
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@MessageMapping("/mode/start")
@@ -61,8 +57,9 @@ public class ModeVoteSocketController {
 		// 이걸 나중에 보내면 그동안 참가자들이 빈 화면을 보게 된다.
 		sendStatus(session.roomUuid(), status);
 
-		if (modeRandom.equals(status.getDecidedMode())) {
-			RouteResponseDto result = routeService.insertRouteResult(session.roomUuid());
+		// 확정할 것이 있는지는 서비스가 판단한다. 여기서는 받은 것만 알린다.
+		RouteResponseDto result = modeVoteService.insertRouteResultIfRandom(session.roomUuid(), status);
+		if (result != null) {
 			messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid() + "/result", result);
 		}
 	}
