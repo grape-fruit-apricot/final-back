@@ -16,8 +16,6 @@ import com.kh.midpoint.roomresult.model.service.RoomResultService;
 import com.kh.midpoint.roomresult.model.vo.RoomResult;
 import com.kh.midpoint.route.model.dao.RouteMapper;
 import com.kh.midpoint.route.model.dto.ParticipantRouteQueryDto;
-import com.kh.midpoint.route.model.dto.ParticipantRouteResponseDto;
-import com.kh.midpoint.route.model.dto.RoutePointQueryDto;
 import com.kh.midpoint.route.model.dto.RoutePointDto;
 import com.kh.midpoint.route.model.dto.RouteResponseDto;
 import com.kh.midpoint.route.model.dto.RouteSegmentDto;
@@ -35,9 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -59,6 +55,7 @@ public class RouteService {
 	private final RestaurantService restaurantService;
 	private final RoomResultService roomResultService;
 	private final RouteMapper routeMapper;
+	private final RouteAssembler routeAssembler;
 	private final TmapRouteClient tmapRouteClient;
 	private final KakaoTransitClient kakaoTransitClient;
 	private final TransactionTemplate transactionTemplate;
@@ -76,7 +73,7 @@ public class RouteService {
 		List<ParticipantRouteQueryDto> routes = insertMissingRouteList(room.getRoomId(), participants, restaurant);
 		roomService.updateStage(room.getRoomId(), "RESOLVED");
 
-		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId(), routes));
+		return new RouteResponseDto(restaurant, routeAssembler.findParticipantRouteList(room.getRoomId(), routes));
 	}
 
 	// 이미 확정된 결과를 다시 계산하지 않고 읽기만 한다. 새로고침이나 뒤늦은 입장에서
@@ -93,7 +90,7 @@ public class RouteService {
 
 		List<ParticipantRouteQueryDto> routes = routeMapper.findRouteList(room.getRoomId(), travelMode);
 
-		return new RouteResponseDto(restaurant, findParticipantRouteList(room.getRoomId(), routes));
+		return new RouteResponseDto(restaurant, routeAssembler.findParticipantRouteList(room.getRoomId(), routes));
 	}
 
 	// 게임이 도는 중에는 결과를 확정하지 않는다. 이게 없으면 방장이 무작위 우회를 눌러
@@ -283,48 +280,6 @@ public class RouteService {
 
 	private String findVehicleText(List<String> vehicles) {
 		return vehicles == null || vehicles.isEmpty() ? null : String.join(",", vehicles);
-	}
-
-	private List<ParticipantRouteResponseDto> findParticipantRouteList(Long roomId, List<ParticipantRouteQueryDto> routes) {
-		// 경로마다 좌표를 따로 조회하면 참가자 수만큼 쿼리가 늘어난다. 도보 폴리라인은
-		// 경로당 좌표가 수백 개라 방 단위로 한 번에 가져와 routeId 로 나눈다.
-		Map<Long, List<RouteSegmentDto>> segmentsByRouteId = findSegmentsByRouteId(roomId);
-
-		return routes.stream()
-				.map(route -> toParticipantRouteResponse(route, segmentsByRouteId.getOrDefault(route.getRouteId(), List.of())))
-				.toList();
-	}
-
-	private Map<Long, List<RouteSegmentDto>> findSegmentsByRouteId(Long roomId) {
-		Map<Long, Map<Long, RouteSegmentDto>> segmentsByRouteAndId = new LinkedHashMap<>();
-		for (RoutePointQueryDto point : routeMapper.findRoutePointListByRoom(roomId)) {
-			RouteSegmentDto segment = segmentsByRouteAndId
-					.computeIfAbsent(point.getRouteId(), routeId -> new LinkedHashMap<>())
-					.computeIfAbsent(point.getRouteSegmentId(), routeSegmentId ->
-							new RouteSegmentDto(
-									point.getSegmentOrder(), point.getSegmentType(),
-									point.getSegmentTimeMinutes(), point.getGuidance(),
-									findVehicleList(point.getVehicles()), new ArrayList<>()));
-			segment.getPoints().add(new RoutePointDto(point.getLat(), point.getLng()));
-		}
-
-		Map<Long, List<RouteSegmentDto>> segmentsByRouteId = new LinkedHashMap<>();
-		segmentsByRouteAndId.forEach((routeId, segmentsById) ->
-				segmentsByRouteId.put(routeId, new ArrayList<>(segmentsById.values())));
-		return segmentsByRouteId;
-	}
-
-	private List<String> findVehicleList(String vehicles) {
-		return vehicles == null || vehicles.isBlank()
-				? List.of()
-				: List.of(vehicles.split(","));
-	}
-
-	private ParticipantRouteResponseDto toParticipantRouteResponse(ParticipantRouteQueryDto route, List<RouteSegmentDto> segments) {
-		List<RoutePointDto> points = segments.stream()
-				.flatMap(segment -> segment.getPoints().stream())
-				.toList();
-		return new ParticipantRouteResponseDto(route.getParticipantId(), route.getNickname(), route.getTravelMode(), route.getTimeMinutes(), points, segments);
 	}
 
 	private void validateTravelMode(String travelMode) {
