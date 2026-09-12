@@ -45,6 +45,13 @@ public class SelectionService {
 		return selectionMapper.findSelection(participantId);
 	}
 
+	// 방의 선택을 모두 지운다. 중간지점이 바뀌면 그 전에 고른 식당은 의미가 없다.
+	// 호출하는 쪽의 트랜잭션에 합류하므로 재설정 전체가 한 단위로 묶인다.
+	@Transactional
+	public void deleteSelectionList(Long roomId) {
+		selectionMapper.deleteSelection(roomId);
+	}
+
 	@Transactional(readOnly = true)
 	public List<SelectionResponseDto> findSelectionList(String roomUuid) {
 		roomService.findRoom(roomUuid);

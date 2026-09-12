@@ -130,6 +130,12 @@ public class ParticipantService {
 		return "Y".equals(participant.getIsHost());
 	}
 
+	// 방 전원의 준비 상태를 내린다. 중간지점이 바뀌면 준비를 다시 받아야 한다.
+	@Transactional
+	public void updateReadyReset(Long roomId) {
+		participantMapper.resetReady(roomId);
+	}
+
 	@Transactional(readOnly = true)
 	public List<ParticipantResponseDto> findParticipantList(String roomUuid) {
 		RoomResponseDto room = roomService.findRoom(roomUuid);

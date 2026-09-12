@@ -102,6 +102,16 @@ public class RestaurantService {
 		return (roadAddress == null || roadAddress.isBlank()) ? nearby.getAddress() : roadAddress;
 	}
 
+	// 방의 식당 목록을 통째로 교체한다. 중간지점이 멀리 옮겨가면 기존 목록은 쓸 수 없다.
+	// 지우기와 넣기가 한 트랜잭션 안에 있어야 목록이 빈 상태로 남지 않는다.
+	@Transactional
+	public void updateRestaurantListByReset(Long roomId, List<Restaurant> restaurants) {
+		restaurantMapper.deleteRestaurant(roomId);
+		if (!restaurants.isEmpty()) {
+			restaurantMapper.insertRestaurantList(restaurants);
+		}
+	}
+
 	@Transactional(readOnly = true)
 	public List<RestaurantResponseDto> findRestaurantList(String roomUuid) {
 		roomService.findRoom(roomUuid);
