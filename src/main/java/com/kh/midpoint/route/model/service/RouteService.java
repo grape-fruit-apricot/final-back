@@ -171,10 +171,10 @@ public class RouteService {
 		}
 	}
 
+	// 경로 한 건과 그 구간·좌표를 한 트랜잭션 안에서 넣는다. 매퍼가 시퀀스를 인라인으로 쓰고
+	// 부모-자식을 CURRVAL 로 잇기 때문에, 이 메서드가 중간에 다른 경로를 끼워 넣으면 안 된다.
 	private void insertRoute(Long roomId, Long participantId, String travelMode, TmapRouteDto route) {
-		Long routeId = routeMapper.findNextRouteId();
 		ParticipantRoute participantRoute = ParticipantRoute.builder()
-				.routeId(routeId)
 				.roomId(roomId)
 				.participantId(participantId)
 				.travelMode(travelMode)
@@ -183,10 +183,7 @@ public class RouteService {
 		routeMapper.insertRoute(participantRoute);
 
 		for (RouteSegmentDto segment : route.getSegments()) {
-			Long routeSegmentId = routeMapper.findNextRouteSegmentId();
 			ParticipantRouteSegment participantRouteSegment = ParticipantRouteSegment.builder()
-					.routeSegmentId(routeSegmentId)
-					.routeId(routeId)
 					.segmentOrder(segment.getSegmentOrder())
 					.segmentType(segment.getSegmentType())
 					.timeMinutes(segment.getTimeMinutes())
@@ -199,7 +196,6 @@ public class RouteService {
 			int pointOrder = 0;
 			for (RoutePointDto point : segment.getPoints()) {
 				routePoints.add(ParticipantRoutePoint.builder()
-						.routeSegmentId(routeSegmentId)
 						.pointOrder(pointOrder)
 						.lat(point.getLat())
 						.lng(point.getLng())

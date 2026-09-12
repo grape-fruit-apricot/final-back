@@ -13,10 +13,6 @@ import java.util.List;
 @Mapper
 public interface RouteMapper {
 
-	Long findNextRouteId();
-
-	Long findNextRouteSegmentId();
-
 	void insertRoute(ParticipantRoute participantRoute);
 
 	void insertRouteSegment(ParticipantRouteSegment participantRouteSegment);

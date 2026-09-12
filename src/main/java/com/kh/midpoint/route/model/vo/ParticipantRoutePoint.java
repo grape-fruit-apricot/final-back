@@ -7,7 +7,6 @@ import lombok.Value;
 @Builder
 public class ParticipantRoutePoint {
 
-	Long routeSegmentId;
 	Integer pointOrder;
 	Double lat;
 	Double lng;

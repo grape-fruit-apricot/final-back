@@ -7,8 +7,6 @@ import lombok.Value;
 @Builder
 public class ParticipantRouteSegment {
 
-	Long routeSegmentId;
-	Long routeId;
 	Integer segmentOrder;
 	String segmentType;
 	Integer timeMinutes;

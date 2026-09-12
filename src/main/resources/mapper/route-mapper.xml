@@ -2,13 +2,14 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.kh.midpoint.route.model.dao.RouteMapper">
 
-	<select id="findNextRouteId" resultType="long">
-		SELECT SEQ_PARTICIPANT_ROUTE.NEXTVAL FROM DUAL
-	</select>
+	<!--
+		시퀀스 값은 VALUES 에 직접 쓰고 자바로 받지 않는다.
+		부모-자식은 CURRVAL 로 잇는다. CURRVAL 은 같은 세션에서 NEXTVAL 이 먼저 불려야 하고
+		그 뒤 다음 NEXTVAL 전까지 값이 고정된다. insertRoute 가 경로 한 건과 그 구간·좌표를
+		한 트랜잭션(=한 커넥션) 안에서 처리하므로 이 전제가 성립한다.
+		경로를 여러 건 넣을 때는 건마다 트랜잭션이 따로 열리므로 서로 섞이지 않는다.
+	-->
 
-	<select id="findNextRouteSegmentId" resultType="long">
-		SELECT SEQ_PARTICIPANT_ROUTE_SEGMENT.NEXTVAL FROM DUAL
-	</select>
 
 	<insert id="insertRoute" parameterType="ParticipantRoute">
 		INSERT
@@ -22,7 +23,7 @@
 								   )
 		VALUES
 			   (
-				 #{routeId}
+				 SEQ_PARTICIPANT_ROUTE.NEXTVAL
 			   , #{roomId}
 			   , #{participantId}
 			   , #{travelMode}
@@ -44,8 +45,8 @@
 									   )
 		VALUES
 			   (
-				 #{routeSegmentId}
-			   , #{routeId}
+				 SEQ_PARTICIPANT_ROUTE_SEGMENT.NEXTVAL
+			   , SEQ_PARTICIPANT_ROUTE.CURRVAL
 			   , #{segmentOrder}
 			   , #{segmentType}
 			   , #{timeMinutes}
@@ -69,7 +70,7 @@
 			VALUES
 				   (
 					 SEQ_PARTICIPANT_ROUTE_POINT.NEXTVAL
-				   , #{point.routeSegmentId}
+				   , SEQ_PARTICIPANT_ROUTE_SEGMENT.CURRVAL
 				   , #{point.pointOrder}
 				   , #{point.lat}
 				   , #{point.lng}
