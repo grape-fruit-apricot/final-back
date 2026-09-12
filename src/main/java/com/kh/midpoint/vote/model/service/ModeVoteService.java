@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.participant.model.dto.ParticipantResponseDto;
 import com.kh.midpoint.participant.model.service.ParticipantService;
@@ -47,7 +48,7 @@ public class ModeVoteService {
 		validateAnyReady(roomUuid);
 
 		modeVoteMapper.deleteModeVoteList(roomUuid);
-		roomService.updateStage(room.getRoomId(), "MODE_SELECTED");
+		roomService.updateStage(room.getRoomId(), RoomStage.MODE_SELECTED.name());
 
 		return findModeVoteStatus(roomUuid);
 	}
@@ -73,7 +74,7 @@ public class ModeVoteService {
 		// 게임으로 정해지면 방장이 게임을 시작할 수 있는 상태로 둔다(GameService 가 여기서 이어받는다).
 		// 무작위는 이어서 경로 확정(RouteService)이 돌면서 RESOLVED 로 바꾼다.
 		if (modeGame.equals(status.getDecidedMode())) {
-			roomService.updateStage(room.getRoomId(), "RESOLVING");
+			roomService.updateStage(room.getRoomId(), RoomStage.RESOLVING.name());
 		}
 
 		return status;
@@ -136,13 +137,13 @@ public class ModeVoteService {
 	}
 
 	private void validateMidpointFound(RoomResponseDto room) {
-		if (!"MIDPOINT_FOUND".equals(room.getStage())) {
+		if (!RoomStage.MIDPOINT_FOUND.is(room.getStage())) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 진행 방식을 정할 수 있습니다.");
 		}
 	}
 
 	private void validateVoteOpen(RoomResponseDto room) {
-		if (!"MODE_SELECTED".equals(room.getStage())) {
+		if (!RoomStage.MODE_SELECTED.is(room.getStage())) {
 			throw new InvalidStateException("투표가 진행 중이 아닙니다.");
 		}
 	}

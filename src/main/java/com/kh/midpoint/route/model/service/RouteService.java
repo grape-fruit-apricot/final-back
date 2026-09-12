@@ -1,5 +1,6 @@
 package com.kh.midpoint.route.model.service;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.external.kakao.KakaoTransitClient;
@@ -65,7 +66,7 @@ public class RouteService {
 		RestaurantResponseDto restaurant = roomResultResolver.insertRoomResult(roomUuid, room.getRoomId());
 
 		List<ParticipantRouteQueryDto> routes = insertMissingRouteList(room.getRoomId(), participants, restaurant);
-		roomService.updateStage(room.getRoomId(), "RESOLVED");
+		roomService.updateStage(room.getRoomId(), RoomStage.RESOLVED.name());
 
 		return new RouteResponseDto(restaurant, routeAssembler.findParticipantRouteList(room.getRoomId(), routes));
 	}

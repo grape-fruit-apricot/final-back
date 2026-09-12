@@ -10,6 +10,7 @@ import com.kh.midpoint.common.exception.NotFoundException;
 import com.kh.midpoint.room.model.dao.RoomMapper;
 import com.kh.midpoint.room.model.dto.RoomCreateRequestDto;
 import com.kh.midpoint.room.model.dto.RoomResponseDto;
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.room.model.vo.Room;
 
 import lombok.RequiredArgsConstructor;
@@ -86,12 +87,7 @@ public class RoomService {
 	}
 
 	private void validateStage(String stage) {
-		if (!"WAITING".equals(stage)
-				&& !"MODE_SELECTED".equals(stage)
-				&& !"MIDPOINT_FOUND".equals(stage)
-				&& !"RESOLVING".equals(stage)
-				&& !"GAME_PLAYING".equals(stage)
-				&& !"RESOLVED".equals(stage)) {
+		if (!RoomStage.isDefined(stage)) {
 			throw new InvalidStateException("올바르지 않은 방 상태입니다: " + stage);
 		}
 	}

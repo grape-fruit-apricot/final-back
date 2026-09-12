@@ -1,5 +1,6 @@
 package com.kh.midpoint.route.model.service;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.restaurant.model.dto.RestaurantResponseDto;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
@@ -32,7 +33,7 @@ public class RoomResultResolver {
 	// 참가자들이 주머니를 고르는 도중에 결과를 가로챌 수 있다.
 	// 게임이 끝나거나 중단되면 RESOLVING 으로 돌아오므로 그때부터 확정할 수 있다.
 	public void validateGameNotPlaying(String stage) {
-		if ("GAME_PLAYING".equals(stage)) {
+		if (RoomStage.GAME_PLAYING.is(stage)) {
 			throw new InvalidStateException("게임이 진행 중입니다.");
 		}
 	}

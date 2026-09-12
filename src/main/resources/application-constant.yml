@@ -86,12 +86,7 @@ server:
 cors:
   allowed-origins: "http://localhost:5173,https://midpoint.my,https://www.midpoint.my,https://dev.midpoint.my"
 
-# 방 단계
-room:
-  stage:
-    midpoint-found: "MIDPOINT_FOUND"
-    resolving: "RESOLVING"
-    game-playing: "GAME_PLAYING"
+# 방 단계 값은 RoomStage enum 이 들고 있다. DB 의 CK_STAGE 와 이름이 같아야 한다.
 
 # 진행 방식 투표
 vote:

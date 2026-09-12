@@ -1,5 +1,6 @@
 package com.kh.midpoint.selection.model.service;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.participant.model.service.ParticipantService;
 import com.kh.midpoint.room.model.service.RoomService;
@@ -24,7 +25,7 @@ public class SelectionService {
 	@Transactional
 	public SelectionResponseDto insertSelection(String roomUuid, Long participantId, SelectionRequestDto requestDto) {
 		String stage = roomService.findRoomForUpdate(roomUuid).getStage();
-		if (!"MIDPOINT_FOUND".equals(stage)) {
+		if (!RoomStage.MIDPOINT_FOUND.is(stage)) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 선택할 수 있습니다.");
 		}
 

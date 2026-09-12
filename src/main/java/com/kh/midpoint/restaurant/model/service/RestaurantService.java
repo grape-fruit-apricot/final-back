@@ -1,5 +1,6 @@
 package com.kh.midpoint.restaurant.model.service;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.DuplicateException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
@@ -31,7 +32,7 @@ public class RestaurantService {
 	@Transactional
 	public void insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
 		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
-		if (!"MIDPOINT_FOUND".equals(room.getStage())) {
+		if (!RoomStage.MIDPOINT_FOUND.is(room.getStage())) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 등록할 수 있습니다.");
 		}
 

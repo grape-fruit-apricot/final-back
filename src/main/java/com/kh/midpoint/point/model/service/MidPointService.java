@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.util.DistanceCalculator;
 import com.kh.midpoint.restaurant.model.service.RestaurantService;
 import com.kh.midpoint.restaurant.model.vo.Restaurant;
@@ -28,8 +29,6 @@ public class MidPointService {
 
 	@Value("${midpoint.reset-distance-meters}")
 	private double resetDistanceMeters;
-	@Value("${room.stage.midpoint-found}")
-	private String midpointFoundStage;
 
 	private final MidPointFinder midpointFinder;
 	private final DistanceCalculator distanceCalculator;
@@ -101,7 +100,7 @@ public class MidPointService {
 	}
 
 	private void validateResettable(RoomResponseDto room) {
-		if (!midpointFoundStage.equals(room.getStage())
+		if (!RoomStage.MIDPOINT_FOUND.is(room.getStage())
 				|| room.getMidpointLat() == null || room.getMidpointLng() == null) {
 			throw new InvalidStateException("중간 위치 재설정은 중간지점 확정 후 투표 시작 전에만 가능합니다.");
 		}
@@ -127,7 +126,7 @@ public class MidPointService {
 		// 좌표만 남는데, 재실행 여부를 좌표로 판정하므로 방이 단계가 멈춘 채 갇힌다.
 		transactionTemplate.executeWithoutResult(status -> {
 			roomService.updateMidpoint(room.getRoomId(), midpoint.getLat(), midpoint.getLng(), source);
-			roomService.updateStage(room.getRoomId(), midpointFoundStage);
+			roomService.updateStage(room.getRoomId(), RoomStage.MIDPOINT_FOUND.name());
 		});
 
 		insertNearbyRestaurantList(roomUuid, midpoint);
