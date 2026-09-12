@@ -25,7 +25,7 @@ public class ChatService {
 	private final RoomService roomService;
 
 	@Transactional(readOnly = true)
-	public ChatSession openSession(String roomUuid, Long participantId) {
+	public ChatSession findChatSession(String roomUuid, Long participantId) {
 		validateRequired(roomUuid, participantId);
 
 		RoomResponseDto room = roomService.findRoom(roomUuid);
@@ -39,7 +39,7 @@ public class ChatService {
 	}
 
 	@Transactional
-	public ChatMessageResponseDto saveMessage(ChatSession session, MsgType msgType, String content) {
+	public ChatMessageResponseDto insertMessage(ChatSession session, MsgType msgType, String content) {
 		ChatMessage message = ChatMessage.builder()
 				.roomId(session.roomId())
 				.participantId(session.participantId())

@@ -47,7 +47,7 @@ public class MidPointFinder {
 		List<NearbyStationDto> candidates = new ArrayList<>(stations);
 		candidates.add(new NearbyStationDto(centerName, centroidLat, centroidLng));
 
-		return walkMidPointService.pickBest(participants, candidates);
+		return walkMidPointService.findBestCandidate(participants, candidates);
 	}
 	
 	public String getCenterName() {

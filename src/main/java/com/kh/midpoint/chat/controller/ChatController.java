@@ -66,7 +66,7 @@ public class ChatController {
 	}
 
 	private void broadcast(ChatSession session, MsgType msgType, String content) {
-		ChatMessageResponseDto saved = chatService.saveMessage(session, msgType, content);
+		ChatMessageResponseDto saved = chatService.insertMessage(session, msgType, content);
 		messagingTemplate.convertAndSend("/topic/room/" + session.roomUuid(), saved);
 	}
 
