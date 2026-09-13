@@ -40,22 +40,22 @@ public class MidPointService {
 
 	// 외부 API는 트랜잭션 밖에서 호출한다. 실패하면 기존 데이터는 전혀 변경하지 않는다.
 	// 계산과 반영을 나눠 어느 문장이 트랜잭션 안에 있는지 읽어서 추적하지 않아도 되게 한다.
-	public NearbyStationDto resetMidpoint(String roomUuid, Long participantId) {
+	public NearbyStationDto resetMidpoint(String roomUuid, Long participantId, String travelMode) {
 		participantService.validateHost(roomUuid, participantId);
 		RoomResponseDto original = roomService.findRoom(roomUuid);
 		validateResettable(original);
 
-		ResetCandidate candidate = findResetCandidate(roomUuid, original);
-		updateByResetCandidate(roomUuid, participantId, original, candidate);
+		ResetCandidate candidate = findResetCandidate(roomUuid, original, travelMode);
+		updateByResetCandidate(roomUuid, participantId, original, candidate, travelMode);
 
 		return candidate.midpoint();
 	}
 
 	// 트랜잭션 밖에서 계산한다. 카카오와 Tmap 을 여러 번 부르므로 이 사이에 DB 커넥션을
 	// 붙잡고 있으면 안 된다.
-	private ResetCandidate findResetCandidate(String roomUuid, RoomResponseDto original) {
+	private ResetCandidate findResetCandidate(String roomUuid, RoomResponseDto original, String travelMode) {
 		NearbyStationDto midpoint = midpointFinder.findMidPoint(
-				participantService.findParticipantList(roomUuid));
+				participantService.findParticipantList(roomUuid), travelMode);
 
 		// 중간지점이 조금만 움직였으면 기존 식당 목록을 그대로 쓴다. 멀리 옮겨갔을 때만 다시 받는다.
 		boolean replaceRestaurants = distanceCalculator.findDistanceMeters(original.getMidpointLat(), original.getMidpointLng(),
@@ -70,7 +70,7 @@ public class MidPointService {
 
 	// 트랜잭션 안에서 반영한다. 방을 잠그고 계산의 전제가 그대로인지 다시 확인한 뒤에만 쓴다.
 	private void updateByResetCandidate(String roomUuid, Long participantId,
-			RoomResponseDto original, ResetCandidate candidate) {
+			RoomResponseDto original, ResetCandidate candidate, String travelMode) {
 		transactionTemplate.executeWithoutResult(status -> {
 			RoomResponseDto current = roomService.findRoomForUpdate(roomUuid);
 			participantService.validateHost(roomUuid, participantId);
@@ -89,7 +89,7 @@ public class MidPointService {
 			}
 
 			NearbyStationDto midpoint = candidate.midpoint();
-			String source = midpoint.getName().equals(midpointFinder.getCenterName()) ? "FALLBACK" : "KAKAO";
+			String source = midpointFinder.findMidpointSource(travelMode);
 			roomService.updateMidpoint(roomId, midpoint.getLat(), midpoint.getLng(), source);
 		});
 	}
@@ -111,7 +111,7 @@ public class MidPointService {
 	// (후보 수 x 참가자 수)만큼 호출하므로, 트랜잭션 안에서 돌리면 그 시간 내내 DB 커넥션을
 	// 붙잡아 관계없는 요청까지 커넥션 대기로 죽는다. 저장은 아래 두 updateXxx 가 각자
 	// 트랜잭션을 열어 처리한다.
-	public NearbyStationDto findMidpoint(String roomUuid, Long participantId) {
+	public NearbyStationDto findMidpoint(String roomUuid, Long participantId, String travelMode) {
 		participantService.validateHost(roomUuid, participantId);
 
 		RoomResponseDto room = roomService.findRoom(roomUuid);
@@ -119,9 +119,9 @@ public class MidPointService {
 
 		List<ParticipantResponseDto> participants = participantService.findParticipantList(roomUuid);
 
-		NearbyStationDto midpoint = midpointFinder.findMidPoint(participants);
+		NearbyStationDto midpoint = midpointFinder.findMidPoint(participants, travelMode);
 
-		String source = midpoint.getName().equals(midpointFinder.getCenterName()) ? "FALLBACK" : "KAKAO";
+		String source = midpointFinder.findMidpointSource(travelMode);
 		// 좌표와 단계를 한 트랜잭션으로 묶는다. 따로 커밋하면 단계 갱신이 실패했을 때
 		// 좌표만 남는데, 재실행 여부를 좌표로 판정하므로 방이 단계가 멈춘 채 갇힌다.
 		transactionTemplate.executeWithoutResult(status -> {

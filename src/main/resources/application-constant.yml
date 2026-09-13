@@ -6,6 +6,8 @@
 candidate:
   count: 3
   name: "중심점"
+  walk:
+    offset-meters: 500
 
 # Tmap 도보 경로
 route:

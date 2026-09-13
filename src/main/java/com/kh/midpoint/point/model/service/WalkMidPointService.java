@@ -42,7 +42,7 @@ public class WalkMidPointService {
 	// 그대로 반환하면 호출부에서 NPE 가 나므로 여기서 걸러낸다.
 	private void validateBest(NearbyStationDto best) {
 		if (best == null) {
-			throw new NotFoundException("모든 후보 지점에서 도보 경로를 찾지 못했습니다.");
+			throw new NotFoundException("중간지점을 찾지 못했습니다.");
 		}
 	}
 
