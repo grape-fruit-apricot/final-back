@@ -25,7 +25,7 @@ public class ChatService {
 	private final RoomService roomService;
 
 	@Transactional(readOnly = true)
-	public ChatSession openSession(String roomUuid, Long participantId) {
+	public ChatSession findChatSession(String roomUuid, Long participantId) {
 		validateRequired(roomUuid, participantId);
 
 		RoomResponseDto room = roomService.findRoom(roomUuid);
@@ -38,8 +38,20 @@ public class ChatService {
 		return new ChatSession(roomUuid, room.getRoomId(), participantId, nickname);
 	}
 
+	// 참가자가 보낸 메시지를 저장한다. 앞뒤 공백을 걷어내고, 남는 내용이 없으면 저장하지 않는다.
+	// 빈 메시지는 예외가 아니라 정상적인 입력 실수라 오류를 돌려주지 않고 null 로 알린다.
 	@Transactional
-	public ChatMessageResponseDto saveMessage(ChatSession session, MsgType msgType, String content) {
+	public ChatMessageResponseDto insertTalkMessage(ChatSession session, String content) {
+		String trimmed = content == null ? "" : content.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+
+		return insertMessage(session, MsgType.TALK, trimmed);
+	}
+
+	@Transactional
+	public ChatMessageResponseDto insertMessage(ChatSession session, MsgType msgType, String content) {
 		ChatMessage message = ChatMessage.builder()
 				.roomId(session.roomId())
 				.participantId(session.participantId())

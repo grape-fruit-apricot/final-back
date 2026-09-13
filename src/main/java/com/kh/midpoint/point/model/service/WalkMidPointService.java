@@ -17,13 +17,13 @@ public class WalkMidPointService {
 
 	private final TmapRouteClient tmapRouteClient;
 
-	public NearbyStationDto pickBest(List<ParticipantResponseDto> participants, List<NearbyStationDto> candidates) {
+	public NearbyStationDto findBestCandidate(List<ParticipantResponseDto> participants, List<NearbyStationDto> candidates) {
 		NearbyStationDto best = null;
 		int bestMaxMinutes = Integer.MAX_VALUE;
 
 		for (NearbyStationDto candidate : candidates) {
 
-			Integer maxMinutes = getMaxWalkingMinutes(participants, candidate);
+			Integer maxMinutes = findMaxWalkingMinutes(participants, candidate);
 
 			if (maxMinutes != null
 					&& maxMinutes < bestMaxMinutes) {
@@ -46,12 +46,12 @@ public class WalkMidPointService {
 		}
 	}
 
-	private Integer getMaxWalkingMinutes(List<ParticipantResponseDto> participants, NearbyStationDto candidate) {
+	private Integer findMaxWalkingMinutes(List<ParticipantResponseDto> participants, NearbyStationDto candidate) {
 		int maxMinutes = 0;
 
 		for (ParticipantResponseDto participant : participants) {
 
-			Integer minutes = getWalkingMinutesOrNull(participant, candidate);
+			Integer minutes = findWalkingMinutesOrNull(participant, candidate);
 
 			if (minutes == null) {
 				return null;
@@ -63,7 +63,7 @@ public class WalkMidPointService {
 		return maxMinutes;
 	}
 
-	private Integer getWalkingMinutesOrNull(ParticipantResponseDto participant, NearbyStationDto candidate) {
+	private Integer findWalkingMinutesOrNull(ParticipantResponseDto participant, NearbyStationDto candidate) {
 		try {
 			return tmapRouteClient.getPedestrianRoute(
 					participant.getPrefLng(),

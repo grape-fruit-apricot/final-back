@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.ForbiddenException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
@@ -46,7 +47,7 @@ public class ParticipantService {
 
 	private void validateParticipantAdmission(RoomResponseDto room) {
 		// 준비 여부와 관계없이 방장이 진행 방식 투표를 시작하기 전까지만 입장할 수 있다.
-		if (!"WAITING".equals(room.getStage()) && !"MIDPOINT_FOUND".equals(room.getStage())) {
+		if (!RoomStage.WAITING.is(room.getStage()) && !RoomStage.MIDPOINT_FOUND.is(room.getStage())) {
 			throw new InvalidStateException("이미 시작된 방이라 입장할 수 없습니다.");
 		}
 		if (participantMapper.findParticipantList(room.getRoomId()).size() >= room.getMaxParticipants()) {
@@ -87,7 +88,7 @@ public class ParticipantService {
 	// 시작 이후에 준비를 풀 수 있으면 이미 순번까지 짜인 게임에서 빠져나가게 된다.
 	private void validateReadyChangeable(RoomResponseDto room) {
 		String stage = room.getStage();
-		if (!"WAITING".equals(stage) && !"MIDPOINT_FOUND".equals(stage)) {
+		if (!RoomStage.WAITING.is(stage) && !RoomStage.MIDPOINT_FOUND.is(stage)) {
 			throw new InvalidStateException("이미 시작된 방이라 준비 상태를 바꿀 수 없습니다.");
 		}
 	}
@@ -121,13 +122,19 @@ public class ParticipantService {
 	// 지우는 순간 GAME_PARTICIPANT·GAME_PICK·SELECTION 까지 함께 사라져 게임이 깨진다.
 	// 게임 중 이탈은 GAME_PARTICIPANT.LEFT_AT 을 남기는 소켓 경로(/app/game/leave)로 처리한다.
 	private void validateNotPlayingGame(RoomResponseDto room) {
-		if ("GAME_PLAYING".equals(room.getStage())) {
+		if (RoomStage.GAME_PLAYING.is(room.getStage())) {
 			throw new InvalidStateException("게임이 진행 중이라 나갈 수 없습니다.");
 		}
 	}
 
 	private boolean isHost(ParticipantResponseDto participant) {
 		return "Y".equals(participant.getIsHost());
+	}
+
+	// 방 전원의 준비 상태를 내린다. 중간지점이 바뀌면 준비를 다시 받아야 한다.
+	@Transactional
+	public void updateReadyReset(Long roomId) {
+		participantMapper.resetReady(roomId);
 	}
 
 	@Transactional(readOnly = true)
