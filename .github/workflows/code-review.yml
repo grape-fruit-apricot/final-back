@@ -21,19 +21,9 @@ jobs:
         run: |
           echo "Run AI code review here"
 
-      - name: Load review template
-        id: template
-        run: |
-          {
-            echo 'body<<EOF'
-            cat .github/CODE_REVIEW_TEMPLATE.md
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-
       - name: Comment on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          BODY: ${{ steps.template.outputs.body }}
         run: |
           gh pr comment "$PR_NUMBER" --body "$BODY"
