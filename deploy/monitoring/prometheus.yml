@@ -1,0 +1,16 @@
+# develop은 Actuator 배포 후 이 설정을 서버에 반영한다.
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: midpoint-develop
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["develop-api:9091"]
+        labels:
+          environment: develop

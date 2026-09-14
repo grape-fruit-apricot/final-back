@@ -1,0 +1,30 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # 여기서 AI 코드 리뷰 등을 수행
+      - name: Run code review
+        # 예: AI 리뷰 Action
+        run: |
+          echo "Run AI code review here"
+
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          BODY="AI code review result"
+          gh pr comment "$PR_NUMBER" --body "$BODY"
