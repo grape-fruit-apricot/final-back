@@ -93,3 +93,8 @@ src/main/resources/static/*-test.html
 !deploy/monitoring/prometheus.yml
 !deploy/monitoring/grafana/provisioning/datasources/prometheus.yml
 deploy/monitoring/secrets/
+
+# ===== 라즈베리파이 =====
+# deviceKey 가 들어가므로 실제 설정 파일은 제외하고 예시만 커밋한다.
+device/config.json
+device/__pycache__/

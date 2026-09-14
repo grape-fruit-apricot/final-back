@@ -50,6 +50,12 @@ tmap:
   # SK open API 앱 키
   app-key: "발급받은_TMAP_앱키"
 
+tracking:
+  # 좌표를 보내는 디바이스(라즈베리파이)와 서버가 나눠 갖는 값.
+  # 이 값을 아는 쪽만 좌표를 밀어넣을 수 있으므로 커밋하지 않는다.
+  # 디바이스의 device/config.json 에 적은 deviceKey 와 똑같아야 한다.
+  device-key: "디바이스에_설정한_키"
+
 # --- 아래부터는 배포 서버에서만 채운다 ---
 #
 # application-constant.yml 의 값을 덮어쓰고 싶을 때 여기에 같은 키를 적는다.
@@ -62,6 +68,13 @@ tmap:
 # cors:
 #   allowed-origins: "https://midpoint.my,https://www.midpoint.my"   # 운영만 허용
 #
+# 만료된 방 정리는 기본이 꺼짐(application-constant.yml 의 cleanup.enabled: false)이다.
+# develop 과 main 이 같은 Oracle 을 보기 때문에, 지우는 서버 한 곳에서만 켠다.
+# 로컬에서는 켜지 않는 것을 권한다. 팀원이 쓰던 방까지 지워진다.
+#
+# cleanup:
+#   enabled: true
+
 # 로컬에서 상수를 잠깐 바꿔보고 싶을 때도 같은 방식으로 쓴다.
 # game:
 #   turn:

@@ -1,5 +1,6 @@
 package com.kh.midpoint.restaurant.model.service;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.DuplicateException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
@@ -31,7 +32,7 @@ public class RestaurantService {
 	@Transactional
 	public void insertRestaurant(String roomUuid, RestaurantCreateRequestDto requestDto) {
 		RoomResponseDto room = roomService.findRoomForUpdate(roomUuid);
-		if (!"MIDPOINT_FOUND".equals(room.getStage())) {
+		if (!RoomStage.MIDPOINT_FOUND.is(room.getStage())) {
 			throw new InvalidStateException("중간 지점이 결정된 상태에서만 식당을 등록할 수 있습니다.");
 		}
 
@@ -100,6 +101,16 @@ public class RestaurantService {
 	private String toRoadAddress(KakaoRestaurantResponseDto nearby) {
 		String roadAddress = nearby.getRoadAddress();
 		return (roadAddress == null || roadAddress.isBlank()) ? nearby.getAddress() : roadAddress;
+	}
+
+	// 방의 식당 목록을 통째로 교체한다. 중간지점이 멀리 옮겨가면 기존 목록은 쓸 수 없다.
+	// 지우기와 넣기가 한 트랜잭션 안에 있어야 목록이 빈 상태로 남지 않는다.
+	@Transactional
+	public void updateRestaurantListByReset(Long roomId, List<Restaurant> restaurants) {
+		restaurantMapper.deleteRestaurant(roomId);
+		if (!restaurants.isEmpty()) {
+			restaurantMapper.insertRestaurantList(restaurants);
+		}
 	}
 
 	@Transactional(readOnly = true)

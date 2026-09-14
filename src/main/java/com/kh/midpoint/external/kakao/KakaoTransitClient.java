@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -43,6 +44,10 @@ public class KakaoTransitClient {
 				.build();
 	}
 
+	// 참가자마다 불리는 데다 이 흐름에서 가장 비싼 외부 호출인데 캐시가 없었다.
+	// 같은 방에서 출발지와 도착지가 같은 조회가 반복되므로 도보 경로와 같은 방식으로 캐시한다.
+	@Cacheable(cacheNames = "route-transit",
+			key = "#startLng + ',' + #startLat + ',' + #endLng + ',' + #endLat")
 	public TransitRouteResponseDto findTransitRoute(Double startLng, Double startLat,
 			Double endLng, Double endLat) {
 		JsonNode response;

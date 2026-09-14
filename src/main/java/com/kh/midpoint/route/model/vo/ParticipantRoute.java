@@ -7,7 +7,6 @@ import lombok.Value;
 @Builder
 public class ParticipantRoute {
 
-	Long routeId;
 	Long roomId;
 	Long participantId;
 	String travelMode;

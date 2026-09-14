@@ -86,12 +86,7 @@ server:
 cors:
   allowed-origins: "http://localhost:5173,https://midpoint.my,https://www.midpoint.my,https://dev.midpoint.my"
 
-# 방 단계
-room:
-  stage:
-    midpoint-found: "MIDPOINT_FOUND"
-    resolving: "RESOLVING"
-    game-playing: "GAME_PLAYING"
+# 방 단계 값은 RoomStage enum 이 들고 있다. DB 의 CK_STAGE 와 이름이 같아야 한다.
 
 # 진행 방식 투표
 vote:
@@ -101,3 +96,49 @@ vote:
 
 midpoint:
   reset-distance-meters: 50
+
+# 외부 디바이스(라즈베리파이) 위치 추적
+tracking:
+# 확정 지점까지 이 거리 안에 들어오면 도착으로 본다(m). 단방향이라 한 번 도착하면 되돌리지 않는다
+  arrival-distance-meters: 50
+# 디바이스에게 알려주는 좌표 전송 주기(ms). 디바이스가 이 값을 받아 그대로 쓴다
+  interval-ms: 3000
+  status:
+    moving: "MOVING"
+    arrived: "ARRIVED"
+
+# 만료된 방 정리
+cleanup:
+# 켜져 있는 서버만 지운다. develop 과 main 이 같은 DB 를 보기 때문에, 둘 다 켜면
+# 같은 방을 동시에 지우려 하면서 잠금 대기가 생기고 로그로 원인을 읽기 어려워진다.
+# 기본은 꺼둔다. 지우는 서버의 application-local.yml 에서만 true 로 덮는다.
+  enabled: false
+# 정리 주기(ms). 만료 판정은 DB 시계(SYSDATE)로 하므로 이 주기가 정확할 필요는 없다
+  interval-ms: 600000
+# 한 번에 지울 방 수 상한. 방 하나가 경로점까지 수천 행이라 한꺼번에 몰면
+# Oracle XE 의 undo 와 커넥션을 오래 잡는다. 남은 방은 다음 주기에 이어서 지운다
+  batch-size: 20
+
+# 외부 API 응답 캐시. 캐시 키가 좌표라서 방이 지워져도 항목은 남는다.
+# 비우는 경로가 따로 없으므로 캐시마다 최대 크기와 만료 시간을 둔다.
+cache:
+# 방 하나가 항목 1~2개를 만든다. 값은 식당 7건이라 항목당 2KB 안팎
+  restaurants-nearby:
+    maximum-size: 2000
+    ttl-minutes: 60
+# 방 하나가 항목 1개를 만든다. 값은 역 3건이라 항목당 수백 바이트
+  stations-nearby:
+    maximum-size: 2000
+    ttl-minutes: 60
+# 값이 도보 경로 좌표 전량이라 항목 하나가 수십 KB 로 셋 중 가장 크고,
+# 중간지점 탐색이 참가자 x 후보 만큼 불러서 방 하나가 항목 수십 개를 만든다.
+# 상한을 넘으면 오래 안 쓰인 항목부터 밀려난다. 같은 방의 탐색과 경로 조회가
+# 같은 좌표쌍을 다시 부르는 구간은 몇 분 이내라 TTL 은 짧게 잡아도 제 역할을 한다
+  route-pedestrian:
+    maximum-size: 1000
+    ttl-minutes: 30
+# 대중교통 경로. 값에 구간과 좌표가 모두 들어 있어 도보 경로와 크기가 비슷하고,
+# 참가자마다 한 번씩 불린다
+  route-transit:
+    maximum-size: 1000
+    ttl-minutes: 30

@@ -96,6 +96,35 @@ sudo mkdir -p /opt/midpoint/{main,develop}/{incoming,config,dist}
 sudo chown -R ubuntu:ubuntu /opt/midpoint
 ```
 
+만들어지는 모양은 이렇다.
+
+```
+/opt/midpoint/
+├── docker-compose.yml          손으로 배치 (1회)
+├── main/
+│   ├── incoming/               워크플로가 scp 로 여기에 떨군다  ← 없으면 배포가 실패한다
+│   ├── config/
+│   │   └── application-local.yml   손으로 작성, 600
+│   ├── dist/                   프론트 산출물 (첫 배포가 채운다)
+│   ├── nginx.conf              손으로 배치 (1회)
+│   ├── app.jar                 백엔드 산출물 (첫 배포가 채운다)
+│   ├── app.jar.prev            직전 버전, 수동 롤백용 (배포가 만든다)
+│   └── dist.prev/              직전 버전, 수동 롤백용 (배포가 만든다)
+└── develop/                    동일 구조
+```
+
+**`incoming/` 이 핵심이다.** 워크플로는 산출물을 곧바로 제자리에 놓지 않는다.
+`incoming/` 에 받아둔 뒤, 서버 스크립트가 검사하고 나서 원자적으로 갈아끼운다
+(실행 중인 JVM 이 `app.jar` 를 열고 있어서 덮어쓰기가 안 되기 때문이다).
+이게 없으면 배포 첫 단계에서 이렇게 실패한다:
+
+```
+scp: remote mkdir "/opt/midpoint/develop/incoming/": No such file or directory
+```
+
+`chown` 을 빼먹으면 다음 배포에서 같은 자리가 `Permission denied` 로 실패한다.
+`.prev` 와 산출물은 배포가 만드므로 미리 만들 필요 없다.
+
 ### 5. 설정 파일 배치
 
 `src/main/resources/application-local.yml.example` 을 참고해 두 개를 만든다.

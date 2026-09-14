@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.midpoint.tracking.model.dao.TrackingMapper">
+
+	<insert id="insertTrackingSession" parameterType="TrackingSession">
+		INSERT
+		  INTO
+			   TRACKING_SESSION (
+								  SESSION_ID
+								, ROOM_ID
+								, PARTICIPANT_ID
+								, DEVICE_KEY
+								, DEST_LAT
+								, DEST_LNG
+								)
+		VALUES
+			   (
+				 SEQ_TRACKING_SESSION.NEXTVAL
+			   , #{roomId}
+			   , #{participantId}
+			   , #{deviceKey}
+			   , #{destLat}
+			   , #{destLng}
+			   )
+	</insert>
+
+	<insert id="insertLocationLog" parameterType="LocationLog">
+		INSERT
+		  INTO
+			   LOCATION_LOG (
+							  LOG_ID
+							, SESSION_ID
+							, SEQ
+							, LAT
+							, LNG
+							, DISTANCE_M
+							)
+		VALUES
+			   (
+				 SEQ_LOCATION_LOG.NEXTVAL
+			   , #{sessionId}
+			   , #{seq}
+			   , #{lat}
+			   , #{lng}
+			   , #{distanceM}
+			   )
+	</insert>
+
+	<select id="findTrackingSession" parameterType="long" resultType="TrackingSessionResponseDto">
+		SELECT
+			   TS.SESSION_ID
+			 , TS.ROOM_ID
+			 , R.ROOM_UUID
+			 , TS.PARTICIPANT_ID
+			 , P.NICKNAME
+			 , TS.DEVICE_KEY
+			 , TS.DEST_LAT
+			 , TS.DEST_LNG
+			 , TS.STATUS
+			 , TS.LAST_DISTANCE_M
+			 , TS.STARTED_AT
+			 , TS.ARRIVED_AT
+		  FROM
+			   TRACKING_SESSION TS
+		  JOIN
+			   ROOM R
+			ON
+			   R.ROOM_ID = TS.ROOM_ID
+		  JOIN
+			   PARTICIPANT P
+			ON
+			   P.PARTICIPANT_ID = TS.PARTICIPANT_ID
+		 WHERE
+			   TS.SESSION_ID = #{sessionId}
+	</select>
+
+	<select id="findTrackingSessionList" parameterType="long" resultType="TrackingSessionResponseDto">
+		SELECT
+			   TS.SESSION_ID
+			 , TS.ROOM_ID
+			 , R.ROOM_UUID
+			 , TS.PARTICIPANT_ID
+			 , P.NICKNAME
+			 , TS.DEVICE_KEY
+			 , TS.DEST_LAT
+			 , TS.DEST_LNG
+			 , TS.STATUS
+			 , TS.LAST_DISTANCE_M
+			 , TS.STARTED_AT
+			 , TS.ARRIVED_AT
+		  FROM
+			   TRACKING_SESSION TS
+		  JOIN
+			   ROOM R
+			ON
+			   R.ROOM_ID = TS.ROOM_ID
+		  JOIN
+			   PARTICIPANT P
+			ON
+			   P.PARTICIPANT_ID = TS.PARTICIPANT_ID
+		 WHERE
+			   TS.ROOM_ID = #{roomId}
+		 ORDER
+			BY
+			   TS.PARTICIPANT_ID
+	</select>
+
+	<!-- 디바이스는 자기 키로 배정을 받아간다. 키가 틀리면 빈 목록이 나가고 아무것도 알 수 없다.
+	     아직 이동 중인 것만 준다. 도착한 세션까지 주면 디바이스가 끝난 경로를 다시 재생한다. -->
+	<select id="findTrackingAssignmentList" resultType="TrackingAssignmentResponseDto">
+		SELECT
+			   TS.SESSION_ID
+			 , R.ROOM_UUID
+			 , P.NICKNAME
+			 , P.PREF_LAT AS START_LAT
+			 , P.PREF_LNG AS START_LNG
+			 , TS.DEST_LAT
+			 , TS.DEST_LNG
+		  FROM
+			   TRACKING_SESSION TS
+		  JOIN
+			   ROOM R
+			ON
+			   R.ROOM_ID = TS.ROOM_ID
+		  JOIN
+			   PARTICIPANT P
+			ON
+			   P.PARTICIPANT_ID = TS.PARTICIPANT_ID
+		 WHERE
+			   TS.DEVICE_KEY = #{deviceKey}
+		   AND
+			   TS.STATUS = 'MOVING'
+		 ORDER
+			BY
+			   TS.SESSION_ID
+	</select>
+
+	<!-- 세션마다 따로 조회하면 인원수만큼 쿼리가 늘어난다. 방 단위로 한 번에 읽고 자바에서 나눈다.
+	     정렬은 RECORDED_AT 이 아니라 SEQ 로 한다. SYSDATE 는 초 단위까지만 표현하는데
+	     좌표는 그보다 촘촘히 들어올 수 있어서, 같은 초에 들어온 점들의 순서가 뒤집힌다. -->
+	<select id="findLocationLogList" parameterType="long" resultType="LocationLogResponseDto">
+		SELECT
+			   LL.SESSION_ID
+			 , LL.SEQ
+			 , LL.LAT
+			 , LL.LNG
+			 , LL.DISTANCE_M
+		  FROM
+			   LOCATION_LOG LL
+		  JOIN
+			   TRACKING_SESSION TS
+			ON
+			   TS.SESSION_ID = LL.SESSION_ID
+		 WHERE
+			   TS.ROOM_ID = #{roomId}
+		 ORDER
+			BY
+			   LL.SESSION_ID
+			 , LL.SEQ
+	</select>
+
+	<!-- STATUS = 'MOVING' 조건이 단방향 전이를 SQL 에서 보장한다.
+	     늦게 도착한 좌표가 이미 도착한 세션을 다시 이동중으로 되돌리지 못한다. -->
+	<update id="updateTrackingProgress" parameterType="TrackingSession">
+		UPDATE
+			   TRACKING_SESSION
+		   SET
+			   LAST_DISTANCE_M = #{lastDistanceM}
+		 WHERE
+			   SESSION_ID = #{sessionId}
+		   AND
+			   STATUS = 'MOVING'
+	</update>
+
+	<!-- STATUS 와 ARRIVED_AT 은 CK_TRACKING_SESSION_ARR 이 함께 묶고 있어
+	     한 UPDATE 에서 같이 바꿔야 한다. 따로 바꾸면 제약에 걸린다. -->
+	<update id="updateTrackingArrived" parameterType="TrackingSession">
+		UPDATE
+			   TRACKING_SESSION
+		   SET
+			   STATUS = 'ARRIVED'
+			 , ARRIVED_AT = SYSDATE
+			 , LAST_DISTANCE_M = #{lastDistanceM}
+		 WHERE
+			   SESSION_ID = #{sessionId}
+		   AND
+			   STATUS = 'MOVING'
+	</update>
+
+</mapper>

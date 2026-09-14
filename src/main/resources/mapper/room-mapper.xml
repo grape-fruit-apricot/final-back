@@ -82,4 +82,38 @@
 		 	   ROOM_UUID = #{roomUuid}
 	</select>
 
+	<!--
+		만료된 방을 한 번에 다 읽지 않고 상한을 둔다. 방 하나가 경로점까지 수천 행이라
+		한 트랜잭션에 다 담으면 Oracle XE 의 undo 와 커넥션을 오래 잡는다.
+		남은 방은 다음 주기에 이어서 지운다.
+
+		만료 판정에 자바 시각을 넘기지 않고 SYSDATE 를 쓰는 이유는, EXPIRES_AT 자체가
+		SYSDATE + 3/24 로 들어가기 때문이다. 앱 서버 시계가 DB 와 다르면 두 값의 기준이 갈린다.
+	-->
+	<select id="findExpiredRoomIdList" resultType="long">
+		SELECT
+			   ROOM_ID
+		  FROM
+			   ROOM
+		 WHERE
+			   EXPIRES_AT &lt; SYSDATE
+		   AND ROWNUM &lt;= #{batchSize}
+	</select>
+
+	<!--
+		자식 테이블은 지우지 않는다. FK 가 전부 ON DELETE CASCADE 라 방 한 줄을 지우면
+		참가자·식당·선택·투표·게임·경로·추적 이력까지 DB 가 함께 정리한다.
+		여기서 자식을 직접 지우면 지워야 할 테이블이 늘어날 때마다 이 SQL 을 고쳐야 한다.
+	-->
+	<delete id="deleteRoomList">
+		DELETE
+		  FROM
+			   ROOM
+		 WHERE
+			   ROOM_ID IN
+			   <foreach item="roomId" collection="list" open="(" separator="," close=")">
+			   #{roomId}
+			   </foreach>
+	</delete>
+
 </mapper>

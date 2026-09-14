@@ -91,7 +91,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					String roomUuid = decode(accessor.getFirstNativeHeader("roomUuid"));
 					Long participantId = parseId(accessor.getFirstNativeHeader("participantId"));
 
-					ChatSession session = chatService.openSession(roomUuid, participantId);
+					ChatSession session = chatService.findChatSession(roomUuid, participantId);
 					attributes.put(sessionAttributeKey, session);
 
 					return message;

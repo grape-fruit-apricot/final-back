@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.kh.midpoint.room.model.vo.RoomStage;
 import com.kh.midpoint.common.exception.DuplicateException;
 import com.kh.midpoint.common.exception.InvalidStateException;
 import com.kh.midpoint.common.exception.NotFoundException;
@@ -43,10 +44,6 @@ public class GameService {
 	@Value("${game.status.aborted}")
 	private String statusAborted;
 
-	@Value("${room.stage.resolving}")
-	private String stageResolving;
-	@Value("${room.stage.game-playing}")
-	private String stageGamePlaying;
 
 	// 잠금 순서는 항상 ROOM -> GAME 으로 고정한다. 게임 진행 중에도 방 상태(stage)를 바꾸므로
 	// 순서가 뒤집힌 경로가 하나라도 있으면 투표·게임시작과 맞물려 교착이 날 수 있다.
@@ -99,7 +96,7 @@ public class GameService {
 				.build());
 		gameMapper.insertGameParticipantList(players);
 
-		roomService.updateStage(room.getRoomId(), stageGamePlaying);
+		roomService.updateStage(room.getRoomId(), RoomStage.GAME_PLAYING.name());
 
 		return findGameStatus(roomUuid);
 	}
@@ -124,7 +121,7 @@ public class GameService {
 			gameMapper.updateGameWinner(participantId);
 			// 게임이 끝났으니 결과를 확정할 수 있는 상태로 되돌린다.
 			// RouteService 가 이어서 RESOLVED 로 바꾼다.
-			roomService.updateStage(room.getRoomId(), stageResolving);
+			roomService.updateStage(room.getRoomId(), RoomStage.RESOLVING.name());
 			return findGameStatus(roomUuid);
 		}
 
@@ -295,7 +292,7 @@ public class GameService {
 	private void updateGameAborted(Long roomId) {
 		if (gameMapper.updateGameAborted(roomId) > 0) {
 			// 방을 막아두지 않는다. 방장이 무작위로 넘길 수 있는 상태로 되돌린다.
-			roomService.updateStage(roomId, stageResolving);
+			roomService.updateStage(roomId, RoomStage.RESOLVING.name());
 		}
 	}
 
@@ -340,7 +337,7 @@ public class GameService {
 	}
 
 	private void validateGameStart(RoomResponseDto room) {
-		if (!stageResolving.equals(room.getStage())) {
+		if (!RoomStage.RESOLVING.is(room.getStage())) {
 			throw new InvalidStateException("게임을 시작할 수 있는 상태가 아닙니다.");
 		}
 	}
