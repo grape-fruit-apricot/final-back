@@ -92,6 +92,7 @@ src/main/resources/static/*-test.html
 !deploy/*.yml
 !deploy/monitoring/prometheus.yml
 !deploy/monitoring/grafana/provisioning/datasources/prometheus.yml
+!deploy/monitoring/grafana/provisioning/dashboards/develop.yml
 deploy/monitoring/secrets/
 
 # ===== 라즈베리파이 =====
