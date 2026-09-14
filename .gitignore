@@ -90,3 +90,6 @@ src/main/resources/static/*-test.html
 # (시크릿은 여기 없다. 워크플로는 GitHub Secrets/Variables 를 참조만 한다)
 !.github/workflows/*.yml
 !deploy/*.yml
+!deploy/monitoring/prometheus.yml
+!deploy/monitoring/grafana/provisioning/datasources/prometheus.yml
+deploy/monitoring/secrets/

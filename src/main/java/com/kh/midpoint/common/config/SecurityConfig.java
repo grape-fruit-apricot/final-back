@@ -21,6 +21,12 @@ public class SecurityConfig {
 	@Value("${cors.allowed-origins}")
 	private List<String> allowedOrigins;
 
+	@Value("${management.server.port:-1}")
+	private int managementPort;
+
+	@Value("${server.port:8080}")
+	private int serverPort;
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
@@ -28,7 +34,17 @@ public class SecurityConfig {
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.formLogin(form -> form.disable())
 			.httpBasic(basic -> basic.disable())
-			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+			.authorizeHttpRequests(auth -> auth
+				// 별도 관리 포트의 두 GET 경로만 허용한다. 전달 헤더는 신뢰하지 않는다.
+				.requestMatchers(request -> managementPort > 0
+					&& managementPort != serverPort
+					&& request.getLocalPort() == managementPort
+					&& "GET".equals(request.getMethod())
+					&& ("/actuator/health".equals(request.getServletPath())
+						|| "/actuator/prometheus".equals(request.getServletPath())))
+				.permitAll()
+				.requestMatchers("/actuator", "/actuator/**").denyAll()
+				.anyRequest().permitAll());
 
 		return http.build();
 	}
