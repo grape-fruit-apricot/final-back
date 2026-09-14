@@ -26,4 +26,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          BODY="AI code review result"
           gh pr comment "$PR_NUMBER" --body "$BODY"
