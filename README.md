@@ -364,6 +364,8 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 
 **API 명세서 (Notion)** — REST 15개 · WebSocket 발행 경로 12개 규격 합의
 
+https://app.notion.com/p/3c110df0798f80aa8f9af2cea02df10f?v=3c110df0798f801fa6ee000c572f9392&source=copy_link
+
 ## 9. 데이터베이스 설계
 
 방, 참가자, 식당, 선택, 투표, 게임, 결과, 경로, 채팅, 이동 추적 도메인별로 테이블을 분리하고 외래키로 관계를 구성했습니다.
