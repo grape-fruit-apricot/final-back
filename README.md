@@ -229,7 +229,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 | **IoT** | Raspberry Pi 4 Model B Rev 1.5 | 이동 중 좌표 수집 및 서버 전송 |
 | **Infra** | AWS EC2, ALB, ACM, Route 53 | 서버 배포, TLS 종료 및 Host 기반 분기, 인증서 1장에 도메인 5개 등록 |
 | **CI/CD** | GitHub Actions | PR 빌드 검증, 시크릿 유출 검사, 원자적 배포 및 롤백 |
-| **Collaboration** | Git, GitHub, Postman, Figma, ERDCloud, Notion | 브랜치 기반 형상 관리, PR 협업, API 테스트, 설계 산출물 관리 |
+| **Collaboration** | Git, GitHub, Postman, Figma, ERDCloud, Notion, slack | 브랜치 기반 형상 관리, PR 협업, API 테스트, 설계 산출물 관리 |
 
 ### 설계 원칙
 
