@@ -225,7 +225,6 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 | **실시간 통신** | STOMP over WebSocket, SockJS | 방 단위 토픽 브로드캐스트, CONNECT 헤더 검증, 세션 기반 행위자 식별 |
 | **Cache** | Spring Cache, Caffeine | 좌표 기준 외부 API 응답 캐싱으로 중복 호출 감소 |
 | **외부 API** | 카카오 로컬, 카카오 대중교통, Tmap 보행자 경로 | 후보 지하철역 검색, 주변 식당 수집, 도보 · 대중교통 경로 산출 |
-| **API 문서** | springdoc-openapi | REST API 명세 자동 생성 |
 | **Build** | Gradle **9.5.1** | 백엔드 빌드 및 의존성 관리, bootJar 산출물 이름 고정 |
 | **IoT** | Raspberry Pi 4 Model B Rev 1.5 | 이동 중 좌표 수집 및 서버 전송 |
 | **Infra** | AWS EC2, ALB, ACM, Route 53 | 서버 배포, TLS 종료 및 Host 기반 분기, 와일드카드 인증서 |
@@ -304,10 +303,10 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 
 | 팀원 | 주요 담당 | GitHub |
 | :---: | :--- | :---: |
-| **신순주** | 프로젝트 총괄 · 일정 관리, 지도 연동, 산출물 문서 | [![GitHub](https://img.shields.io/badge/GitHub-grape--fruit--apricot-F59E0B?style=flat-square&logo=github&logoColor=white)](https://github.com/grape-fruit-apricot) |
-| **박경환** | 중간 지점 계산, 방 생성 · 입장, ERD 설계, 서버 구축, 코드 리팩토링 | [![GitHub](https://img.shields.io/badge/GitHub-ghksl0204--shapa-22C55E?style=flat-square&logo=github&logoColor=white)](https://github.com/ghksl0204-shapa) |
-| **남지호** | 실시간 채팅, WebSocket 세션 관리, UI 스타일 개선, 화면 설계, 산출물 문서 | [![GitHub](https://img.shields.io/badge/GitHub-jiho0828-FF6B6B?style=flat-square&logo=github&logoColor=white)](https://github.com/jiho0828) |
-| **지세웅** | 미니게임 구현, 게임 상태 관리, 차례 · 이탈 처리 | [![GitHub](https://img.shields.io/badge/GitHub-CU0--0-3B82F6?style=flat-square&logo=github&logoColor=white)](https://github.com/CU0-0) |
+| **신순주** | 프로젝트 총괄 · 일정 관리, 지도 연동, 산출물 문서 총괄 | [![GitHub](https://img.shields.io/badge/GitHub-grape--fruit--apricot-F59E0B?style=flat-square&logo=github&logoColor=white)](https://github.com/grape-fruit-apricot) |
+| **박경환** | 중간 지점 계산, 방 생성 · 입장, ERD 설계, 서버 구축, 코드 리팩토링, 미니게임 구현 | [![GitHub](https://img.shields.io/badge/GitHub-ghksl0204--shapa-22C55E?style=flat-square&logo=github&logoColor=white)](https://github.com/ghksl0204-shapa) |
+| **남지호** | 실시간 채팅, WebSocket 세션 관리, UI 스타일 개선, 화면 설계, 산출물 문서 작성 | [![GitHub](https://img.shields.io/badge/GitHub-jiho0828-FF6B6B?style=flat-square&logo=github&logoColor=white)](https://github.com/jiho0828) |
+| **지세웅** | 미니게임 설계, 테스트 검증, 오류 케이스 작성  | [![GitHub](https://img.shields.io/badge/GitHub-CU0--0-3B82F6?style=flat-square&logo=github&logoColor=white)](https://github.com/CU0-0) |
 
 ### 협업 방식
 
@@ -369,7 +368,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 
 방, 참가자, 식당, 선택, 투표, 게임, 결과, 경로, 채팅, 이동 추적 도메인별로 테이블을 분리하고 외래키로 관계를 구성했습니다.
 
-- **테이블:** 13개
+- **테이블:** 15개
 - 참가자 삭제 시 하위 데이터가 함께 사라지지 않도록, **게임 중 이탈은 행을 지우지 않고 이탈 시각만 기록**합니다.
 - 경로는 `경로 → 구간 → 좌표` 3단계로 나눠 저장해 구간별 이동수단과 안내 문구를 함께 관리합니다.
 - 1인 1표가 필요한 선택과 투표는 `MERGE` 로 처리해 재선택이 기존 행을 덮어쓰도록 했습니다.
