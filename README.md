@@ -325,7 +325,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 | 백엔드 도메인 | **10개** |
 | REST API | **15개** |
 | WebSocket 발행 경로 | **12개** |
-| 데이터베이스 테이블 | **13개** |
+| 데이터베이스 테이블 | **15개** |
 | 프론트엔드 화면 | **7종** |
 | QA 테스트 케이스 | **188건** |
 | Pull Request | **65개** |
@@ -339,7 +339,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 | :--- | :--- | :--- |
 | 유스케이스 다이어그램 | draw.io | 방장 · 참가자 역할별로 가능한 동작 범위 정의 |
 | 화면 설계 | Figma | 화면 7종의 레이아웃과 화면 간 이동 흐름 설계 |
-| ERD | ERDCloud | 테이블 13개의 관계와 제약조건 설계 |
+| ERD | ERDCloud | 테이블 15개의 관계와 제약조건 설계 |
 | API 명세서 | Notion | REST 15개 · WebSocket 발행 경로 12개 규격 합의 |
 
 ### 설계 산출물
@@ -356,7 +356,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
   <img width="900" alt="화면 설계" src="https://github.com/user-attachments/assets/38c6861c-4bd5-41c4-a07b-3fcea0d34158" />
 </p>
 
-**ERD (ERDCloud)** — 테이블 13개의 관계와 제약조건 설계
+**ERD (ERDCloud)** — 테이블 15개의 관계와 제약조건 설계
 
 <p align="center">
   <img width="900" alt="ERD" src="https://github.com/user-attachments/assets/98099d31-8a09-48db-8ebf-699ec47d61d9" />
