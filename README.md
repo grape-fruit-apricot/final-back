@@ -227,7 +227,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 | **외부 API** | 카카오 로컬, 카카오 대중교통, Tmap 보행자 경로 | 후보 지하철역 검색, 주변 식당 수집, 도보 · 대중교통 경로 산출 |
 | **Build** | Gradle **9.5.1** | 백엔드 빌드 및 의존성 관리, bootJar 산출물 이름 고정 |
 | **IoT** | Raspberry Pi 4 Model B Rev 1.5 | 이동 중 좌표 수집 및 서버 전송 |
-| **Infra** | AWS EC2, ALB, ACM, Route 53 | 서버 배포, TLS 종료 및 Host 기반 분기, "도메인별 인증서 발급" |
+| **Infra** | AWS EC2, ALB, ACM, Route 53 | 서버 배포, TLS 종료 및 Host 기반 분기, 인증서 1장에 도메인 5개 등록 |
 | **CI/CD** | GitHub Actions | PR 빌드 검증, 시크릿 유출 검사, 원자적 배포 및 롤백 |
 | **Collaboration** | Git, GitHub, Postman, Figma, ERDCloud, Notion | 브랜치 기반 형상 관리, PR 협업, API 테스트, 설계 산출물 관리 |
 
@@ -247,7 +247,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 | :--- | :--- | :--- |
 | 서버 환경 | AWS EC2 | EC2 1대에 운영 · 개발 환경을 함께 구성 |
 | 트래픽 처리 | AWS Application Load Balancer | TLS 종료 후 **Host 헤더 기준 4갈래 분기** |
-| HTTPS | AWS Certificate Manager | "도메인 5개에 인증서를 각각 발급해 ALB 리스너에 함께 연결" |
+| HTTPS | AWS Certificate Manager | 인증서 1장에 도메인 5개를 등록(SAN) 해 ALB 리스너에 연결 |
 | 도메인 | Route 53 | 도메인을 ALB에 연결 |
 | 배포 | GitHub Actions | 원자적 교체 방식 배포, 직전 버전 보관으로 롤백 가능 |
 | 품질 게이트 | GitHub Actions | PR 단계에서 **빌드 검증 + 시크릿 유출 검사** 동시 수행 |
@@ -256,7 +256,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
 ### 배포 설계에서 신경 쓴 것
 
 - 운영과 개발을 **같은 인스턴스에 두되 도메인으로 갈랐습니다.** ALB가 Host 헤더를 보고 분기하므로 인스턴스를 늘리지 않고도 환경이 섞이지 않습니다.
-- 인증서는 도메인마다 하나씩 발급해 ALB 리스너에 모두 붙였습니다. ALB가 요청이 들어온 도메인에 맞는 인증서를 골라 쓰기 때문에, 리스너는 하나만 두고도 도메인 5개를 HTTPS로 받습니다.
+- **인증서 한 장에 도메인 5개를 추가 이름(SAN)으로 등록**해 관리 지점을 하나로 만들었습니다.
 - 배포는 파일을 덮어쓰지 않고 **교체**합니다. 중간 상태가 노출되지 않고, 직전 버전이 남아 있어 되돌리는 데 재빌드가 필요 없습니다.
 - 시크릿 검사를 PR 단계에 둔 이유는, 병합된 뒤에 발견하면 이미 이력에 남기 때문입니다.
 
@@ -288,7 +288,7 @@ CASE WHEN G.STATUS = 'FINISHED' THEN G.WINNING_INDEX END AS WINNING_INDEX
     </tr>
     <tr>
       <td><b>AWS 배포 환경</b></td>
-      <td>EC2 1대에 운영 · 개발을 함께 올리고, ALB가 TLS를 끝낸 뒤 <b>Host 헤더로 4갈래 분기</b>합니다. "도메인 5개의 인증서는 ACM에서 발급해 리스너 하나에 함께 붙였습니다"</td>
+      <td>EC2 1대에 운영 · 개발을 함께 올리고, ALB가 TLS를 끝낸 뒤 <b>Host 헤더로 4갈래 분기</b>합니다. ACM 인증서 1장에 도메인 5개를 등록해 HTTPS를 처리합니다</td>
     </tr>
   </tbody>
 </table>
@@ -492,7 +492,7 @@ WAITING  →  MIDPOINT_FOUND  →  MODE_SELECTED  →  RESOLVING  →  GAME_PLAY
 - 당첨 위치를 애플리케이션이 읽지 않는 설계로 **정보 유출 경로 자체를 제거**했습니다.
 - 게임 상태를 DB에 저장해 **새로고침 · 재접속에도 진행 상황이 복원**되도록 했습니다.
 - 외부 API 호출을 트랜잭션 밖으로 빼고 **일부 실패가 전체를 막지 않도록** 실패 범위를 격리했습니다.
-- "ALB의 Host 헤더 분기로"
+- ALB Host 분기와 도메인 5개를 담은 인증서 1장으로 EC2 1대 분리 운용
 
 <div align="center">
 
